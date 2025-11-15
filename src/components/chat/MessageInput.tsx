@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from "react";
@@ -116,6 +117,11 @@ export default function MessageInput({ groupId }: { groupId: string }) {
                 requestResourceData: messageData
             });
             errorEmitter.emit('permission-error', permissionError);
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to send file.",
+            });
           });
           setUploading(false);
         }
