@@ -12,13 +12,13 @@ type Language = 'en' | 'vi' | 'zh';
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, replacements?: Record<string, string>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('vi');
   
   useEffect(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
@@ -32,7 +32,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('language', lang);
   };
 
-  const t = (key: string): string => {
+  const t = (key: string, replacements?: Record<string, string>): string => {
     const keys = key.split('.');
     let result = translations[language];
     for (const k of keys) {
@@ -43,10 +43,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         for (const fk of keys) {
             fallback = fallback?.[fk];
         }
-        return fallback || key;
+        if (fallback) {
+          result = fallback;
+          break;
+        }
+        return key;
       }
     }
-    return result || key;
+
+    let finalString = result || key;
+
+    if (replacements && typeof finalString === 'string') {
+      for (const placeholder in replacements) {
+        finalString = finalString.replace(`{${placeholder}}`, replacements[placeholder]);
+      }
+    }
+
+    return finalString;
   };
 
   const value = {

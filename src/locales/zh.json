@@ -12,6 +12,7 @@
   "register": {
     "title": "注册",
     "description": "创建一个新帐户以开始聊天。",
+    "nameLabel": "全名",
     "emailLabel": "电子邮件",
     "passwordLabel": "密码",
     "confirmPasswordLabel": "确认密码",
@@ -64,6 +65,7 @@
   },
   "messageInput": {
     "placeholder": "输入消息...",
+    "sendMessage": "发送消息",
     "uploadFile": "上传文件"
   },
   "message": {
@@ -112,7 +114,7 @@
     "memberRemoved": "已从群组中删除成员。",
     "messageSendError": "发送消息失败。",
     "fileTooLarge": "文件太大",
-    "fileTooLargeDesc": "请上传小于20MB的文件。",
+    "fileTooLargeDesc": "请上传小于{size}的文件。",
     "uploadFailed": "上传失败",
     "fileSendError": "发送文件失败。",
     "processFileError": "无法处理文件。",

@@ -24,6 +24,7 @@ export default function Login() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [signUpName, setSignUpName] = useState("");
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
@@ -43,7 +44,7 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpEmail || !signUpPassword || !signUpConfirmPassword) {
+    if (!signUpEmail || !signUpPassword || !signUpConfirmPassword || !signUpName) {
         toast({ variant: "destructive", description: t('toasts.fillFields') });
         return;
     }
@@ -52,7 +53,7 @@ export default function Login() {
         return;
     }
     try {
-      await signUpWithEmail(signUpEmail, signUpPassword);
+      await signUpWithEmail(signUpEmail, signUpPassword, signUpName);
     } catch (error: any) {
         toast({ variant: "destructive", title: t('toasts.signUpFailed'), description: error.message });
     }
@@ -114,6 +115,10 @@ export default function Login() {
             <CardContent>
              <form onSubmit={handleSignUp}>
                 <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="signup-name">{t('register.nameLabel')}</Label>
+                        <Input id="signup-name" type="text" placeholder="John Doe" required value={signUpName} onChange={(e) => setSignUpName(e.target.value)} />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="signup-email">{t('register.emailLabel')}</Label>
                         <Input id="signup-email" type="email" placeholder="m@example.com" required value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} />

@@ -6,7 +6,8 @@ import type { User } from "firebase/auth";
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut,
+  updateProfile,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
@@ -18,7 +19,7 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   signInWithEmail: (email: string, pass: string) => Promise<any>;
-  signUpWithEmail: (email: string, pass: string) => Promise<any>;
+  signUpWithEmail: (email: string, pass: string, name: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -37,9 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
-             // This case happens for users that just signed up
-             // The user profile is created in signUpWithEmail, but we might reach here
-             // before the write is complete. Let's create it if it doesn't exist.
              const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || firebaseUser.email,
@@ -61,13 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               });
           }
         } catch (error) {
-           // This could be a permission error on getDoc
            const permissionError = new FirestorePermissionError({
             path: userRef.path,
             operation: 'get',
           });
           errorEmitter.emit('permission-error', permissionError);
-          setUser(null); // Clear user if profile can't be fetched
+          setUser(null); 
         }
       } else {
         setUser(null);
@@ -82,24 +79,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return signInWithEmailAndPassword(auth, email, pass);
   };
   
-  const signUpWithEmail = async (email: string, pass: string) => {
+  const signUpWithEmail = async (email: string, pass: string, name: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const firebaseUser = userCredential.user;
     
+    await updateProfile(firebaseUser, { displayName: name });
+
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: firebaseUser.displayName || email,
+      displayName: name,
       email: firebaseUser.email,
       photoURL: firebaseUser.photoURL,
     };
     const userRef = doc(db, "users", firebaseUser.uid);
     
-    // Using setDoc with contextual error handling
     setDoc(userRef, newUserProfile, { merge: false })
       .then(() => {
-        // This is handled by onAuthStateChanged but we can set it here to speed up UI
         setUser(newUserProfile); 
-        // If the user is the admin, create the admin role document
         if (email === 'admin@gmail.com') {
             const adminRoleRef = doc(db, "roles_admin", firebaseUser.uid);
             setDoc(adminRoleRef, { admin: true }).catch(error => {

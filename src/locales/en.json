@@ -12,6 +12,7 @@
   "register": {
     "title": "Register",
     "description": "Create a new account to start chatting.",
+    "nameLabel": "Full Name",
     "emailLabel": "Email",
     "passwordLabel": "Password",
     "confirmPasswordLabel": "Confirm Password",
@@ -64,6 +65,7 @@
   },
   "messageInput": {
     "placeholder": "Type a message...",
+    "sendMessage": "Send Message",
     "uploadFile": "Upload File"
   },
   "message": {
@@ -112,7 +114,7 @@
     "memberRemoved": "Member removed from the group.",
     "messageSendError": "Failed to send message.",
     "fileTooLarge": "File too large",
-    "fileTooLargeDesc": "Please upload files smaller than 20MB.",
+    "fileTooLargeDesc": "Please upload files smaller than {size}.",
     "uploadFailed": "Upload Failed",
     "fileSendError": "Failed to send file.",
     "processFileError": "Could not process file.",

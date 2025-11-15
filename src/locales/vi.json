@@ -12,6 +12,7 @@
   "register": {
     "title": "Đăng ký",
     "description": "Tạo tài khoản mới để bắt đầu trò chuyện.",
+    "nameLabel": "Họ và Tên",
     "emailLabel": "Email",
     "passwordLabel": "Mật khẩu",
     "confirmPasswordLabel": "Xác nhận mật khẩu",
@@ -64,6 +65,7 @@
   },
   "messageInput": {
     "placeholder": "Nhập tin nhắn...",
+    "sendMessage": "Gửi tin nhắn",
     "uploadFile": "Tải tệp lên"
   },
   "message": {
@@ -112,7 +114,7 @@
     "memberRemoved": "Đã xóa thành viên khỏi nhóm.",
     "messageSendError": "Không thể gửi tin nhắn.",
     "fileTooLarge": "Tệp quá lớn",
-    "fileTooLargeDesc": "Vui lòng tải lên các tệp nhỏ hơn 20MB.",
+    "fileTooLargeDesc": "Vui lòng tải lên các tệp nhỏ hơn {size}.",
     "uploadFailed": "Tải lên thất bại",
     "fileSendError": "Không thể gửi tệp.",
     "processFileError": "Không thể xử lý tệp.",
