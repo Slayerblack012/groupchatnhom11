@@ -1,3 +1,4 @@
+
 {
   "login": {
     "title": "Login",
@@ -98,7 +99,8 @@
     "passwordsNoMatch": "Passwords do not match.",
     "loginFailed": "Login Failed",
     "signUpFailed": "Sign Up Failed",
-    "adminLeaveError": "Admins cannot leave the group. Please transfer ownership to another member first.",
+    "adminLeaveError": "Admins cannot leave the group.",
+    "adminTransferOwnership": "Please transfer ownership to another member first.",
     "groupLeftSuccess": "You have left the group: {groupName}",
     "leaveGroupError": "Failed to leave group.",
     "userNotFound": "User not found.",

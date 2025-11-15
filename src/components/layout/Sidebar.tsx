@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,13 +7,10 @@ import {
   query,
   where,
   onSnapshot,
-  addDoc,
-  serverTimestamp,
   doc,
   updateDoc,
-  arrayUnion,
   getDoc,
-  arrayRemove,
+  setDoc,
 } from "firebase/firestore";
 import { useAuth } from "@/providers/auth-provider";
 import { db } from "@/lib/firebase/config";
@@ -168,19 +166,59 @@ function CreateGroupDialog() {
   const { t } = useLanguage();
   const [groupName, setGroupName] = useState("");
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [createdGroupId, setCreatedGroupId] = useState<string | null>(null);
+
+  const generateGroupId = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // remove special characters
+      .replace(/\s+/g, '-') // replace spaces with hyphens
+      .slice(0, 50); // limit length
+  };
 
   const handleCreateGroup = async () => {
     if (!groupName.trim() || !user) return;
+    setIsLoading(true);
+
+    let finalGroupId = generateGroupId(groupName);
+    let isUnique = false;
+    let attempts = 0;
+    
+    while (!isUnique && attempts < 10) {
+      try {
+        const groupRef = doc(db, 'groups', finalGroupId);
+        const docSnap = await getDoc(groupRef);
+        if (!docSnap.exists()) {
+          isUnique = true;
+        } else {
+          finalGroupId = `${generateGroupId(groupName)}-${Math.floor(Math.random() * 1000)}`;
+          attempts++;
+        }
+      } catch (error) {
+        console.error("Error checking group ID uniqueness:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to check for group ID uniqueness." });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    if (!isUnique) {
+      toast({ variant: "destructive", title: "Error", description: "Could not create a unique group ID. Please try a different name." });
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const docRef = await addDoc(collection(db, "groups"), {
+      const groupRef = doc(db, 'groups', finalGroupId);
+      await setDoc(groupRef, {
+        id: finalGroupId,
         name: groupName,
         admin: user.uid,
         members: [user.uid],
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
       });
-      setCreatedGroupId(docRef.id);
+      setCreatedGroupId(finalGroupId);
     } catch (error) {
       console.error("Error creating group:", error);
       toast({
@@ -188,6 +226,8 @@ function CreateGroupDialog() {
         title: "Error",
         description: t('toasts.groupCreateError'),
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -196,7 +236,7 @@ function CreateGroupDialog() {
     navigator.clipboard.writeText(createdGroupId);
     toast({
       title: t('toasts.groupIdCopied'),
-      description: t('toasts.groupIdCopied'),
+      description: `ID: ${createdGroupId}`,
     });
   };
 
@@ -204,6 +244,7 @@ function CreateGroupDialog() {
     setOpen(false);
     setGroupName('');
     setCreatedGroupId(null);
+    setIsLoading(false);
   }
 
   return (
@@ -242,8 +283,8 @@ function CreateGroupDialog() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleCreateGroup} disabled={!groupName.trim()}>
-                {t('createGroupDialog.createButton')}
+              <Button onClick={handleCreateGroup} disabled={!groupName.trim() || isLoading}>
+                {isLoading ? "Creating..." : t('createGroupDialog.createButton')}
               </Button>
             </DialogFooter>
           </>
@@ -288,9 +329,11 @@ function JoinGroupDialog() {
   const { t } = useLanguage();
   const [groupId, setGroupId] = useState("");
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleJoinGroup = async () => {
     if (!groupId.trim() || !user) return;
+    setIsLoading(true);
 
     const groupRef = doc(db, "groups", groupId.trim());
     try {
@@ -315,7 +358,7 @@ function JoinGroupDialog() {
       }
 
       await updateDoc(groupRef, {
-        members: arrayUnion(user.uid),
+        members: [...groupData.members, user.uid],
       });
 
       toast({
@@ -331,6 +374,8 @@ function JoinGroupDialog() {
         title: "Error",
         description: t('toasts.joinError'),
       });
+    } finally {
+        setIsLoading(false);
     }
   };
   return (
@@ -362,8 +407,8 @@ function JoinGroupDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleJoinGroup} disabled={!groupId.trim()}>
-            {t('joinGroupDialog.joinButton')}
+          <Button onClick={handleJoinGroup} disabled={!groupId.trim() || isLoading}>
+            {isLoading ? "Joining..." : t('joinGroupDialog.joinButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -371,63 +416,6 @@ function JoinGroupDialog() {
   );
 }
 
-function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) {
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const { t } = useLanguage();
-    const [open, setOpen] = useState(false);
+// This component is no longer used in the sidebar but kept for reference or future use.
+// function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) { ... }
 
-    const handleLeaveGroup = async () => {
-        if (!user) return;
-
-        if (user.uid === group.admin) {
-            toast({
-                variant: "destructive",
-                description: t('toasts.adminLeaveError'),
-            });
-            return;
-        }
-
-        const groupRef = doc(db, "groups", group.id);
-        try {
-            await updateDoc(groupRef, {
-                members: arrayRemove(user.uid),
-            });
-            toast({
-                title: "Success",
-                description: t('toasts.groupLeftSuccess', { groupName: group.name }),
-            });
-            onLeave();
-            setOpen(false);
-        } catch (error) {
-            console.error("Error leaving group:", error);
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: t('toasts.leaveGroupError'),
-            });
-        }
-    };
-    
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="destructive" className="w-full justify-start">
-                    <LogOut className="mr-2 h-4 w-4" /> {t('leaveGroupDialog.leaveButton')}
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{t('leaveGroupDialog.confirmTitle')}</DialogTitle>
-                    <DialogDescription>
-                        {t('leaveGroupDialog.confirmDescription', { groupName: group.name })}
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setOpen(false)}>{t('leaveGroupDialog.cancelButton')}</Button>
-                    <Button variant="destructive" onClick={handleLeaveGroup}>{t('leaveGroupDialog.leaveButton')}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}

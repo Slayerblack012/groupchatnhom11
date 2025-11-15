@@ -1,3 +1,4 @@
+
 {
   "login": {
     "title": "登录",
@@ -98,7 +99,8 @@
     "passwordsNoMatch": "密码不匹配。",
     "loginFailed": "登录失败",
     "signUpFailed": "注册失败",
-    "adminLeaveError": "管理员不能离开群组。请先将所有权转让给另一位成员。",
+    "adminLeaveError": "管理员不能离开群组。",
+    "adminTransferOwnership": "请先将所有权转让给另一位成员。",
     "groupLeftSuccess": "您已离开群组：{groupName}",
     "leaveGroupError": "离开群组失败。",
     "userNotFound": "未找到用户。",

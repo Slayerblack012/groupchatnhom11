@@ -1,11 +1,10 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import {
   doc,
   updateDoc,
-  arrayUnion,
-  arrayRemove,
   collection,
   query,
   where,
@@ -46,21 +45,28 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
 
   useEffect(() => {
     const fetchMembers = async () => {
+      if (!group?.members) return;
       setLoadingMembers(true);
-      const memberProfiles: UserProfile[] = [];
-      for (const memberId of group.members) {
-        const userRef = doc(db, "users", memberId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          memberProfiles.push(userSnap.data() as UserProfile);
+      try {
+        const memberProfiles: UserProfile[] = [];
+        for (const memberId of group.members) {
+          const userRef = doc(db, "users", memberId);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            memberProfiles.push(userSnap.data() as UserProfile);
+          }
         }
+        setMembers(memberProfiles);
+      } catch (error) {
+          console.error("Error fetching members:", error);
+          toast({ variant: "destructive", title: "Error", description: "Failed to load group members." });
+      } finally {
+        setLoadingMembers(false);
       }
-      setMembers(memberProfiles);
-      setLoadingMembers(false);
     };
 
     fetchMembers();
-  }, [group.members]);
+  }, [group.members, toast]);
 
   const handleAddMember = async () => {
     if (!newMemberEmail.trim()) return;
@@ -83,12 +89,13 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       
       const groupRef = doc(db, "groups", group.id);
       await updateDoc(groupRef, {
-        members: arrayUnion(userToAdd.uid),
+        members: [...group.members, userToAdd.uid],
       });
 
+      // Optimistically update UI, but Firestore listener will correct it
       setMembers(prev => [...prev, userToAdd]);
       setNewMemberEmail("");
-      toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName }) });
+      toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
     } catch (error) {
       console.error("Error adding member:", error);
       toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
@@ -104,9 +111,10 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     try {
         const groupRef = doc(db, "groups", group.id);
         await updateDoc(groupRef, {
-            members: arrayRemove(memberId),
+            members: group.members.filter(id => id !== memberId),
         });
 
+        // Optimistically update UI
         setMembers(prev => prev.filter(m => m.uid !== memberId));
         toast({ title: "Success", description: t('toasts.memberRemoved') });
 
@@ -121,7 +129,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
-          <span className="sr-only">{t('chatHeader.manageMembers')}</span>
+          <span className="sr-only">{t('memberManagement.title')}</span>
         </Button>
       </SheetTrigger>
       <SheetContent>
@@ -140,7 +148,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
               value={newMemberEmail}
               onChange={(e) => setNewMemberEmail(e.target.value)}
             />
-            <Button onClick={handleAddMember} size="icon" variant="outline">
+            <Button onClick={handleAddMember} size="icon" variant="outline" aria-label="Add Member">
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -156,7 +164,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
                   <div key={member.uid} className="flex items-center justify-between rounded-md border p-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.photoURL || ""} />
+                        <AvatarImage src={member.photoURL || ""} alt={member.displayName || ""} />
                         <AvatarFallback>{member.displayName?.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
@@ -165,7 +173,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
                       </div>
                     </div>
                     {adminUser?.uid === group.admin && member.uid !== group.admin && (
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(member.uid)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(member.uid)} aria-label={`Remove ${member.displayName}`}>
                             <UserX className="h-4 w-4 text-destructive" />
                         </Button>
                     )}
@@ -179,3 +187,4 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     </Sheet>
   );
 }
+

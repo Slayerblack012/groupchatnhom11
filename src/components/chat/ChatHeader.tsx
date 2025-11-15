@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
@@ -15,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { doc, updateDoc, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/providers/language-provider";
@@ -68,7 +69,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             toast({
                 variant: "destructive",
                 title: t('toasts.adminLeaveError'),
-                description: t('toasts.adminLeaveError'),
+                description: t('toasts.adminTransferOwnership'),
             });
             return;
         }
@@ -76,10 +77,10 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
         const groupRef = doc(db, "groups", group.id);
         try {
             await updateDoc(groupRef, {
-                members: arrayRemove(user.uid),
+                members: group.members.filter(id => id !== user.uid)
             });
             toast({
-                title: t('toasts.groupLeftSuccess', { groupName: group.name }),
+                title: "Success",
                 description: t('toasts.groupLeftSuccess', { groupName: group.name }),
             });
             onLeave();
@@ -88,7 +89,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             console.error("Error leaving group:", error);
             toast({
                 variant: "destructive",
-                title: t('toasts.leaveGroupError'),
+                title: "Error",
                 description: t('toasts.leaveGroupError'),
             });
         }

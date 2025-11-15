@@ -1,3 +1,4 @@
+
 {
   "login": {
     "title": "Đăng nhập",
@@ -98,7 +99,8 @@
     "passwordsNoMatch": "Mật khẩu không khớp.",
     "loginFailed": "Đăng nhập thất bại",
     "signUpFailed": "Đăng ký thất bại",
-    "adminLeaveError": "Quản trị viên không thể rời khỏi nhóm. Vui lòng chuyển quyền sở hữu cho thành viên khác trước.",
+    "adminLeaveError": "Quản trị viên không thể rời khỏi nhóm.",
+    "adminTransferOwnership": "Vui lòng chuyển quyền sở hữu cho thành viên khác trước.",
     "groupLeftSuccess": "Bạn đã rời khỏi nhóm: {groupName}",
     "leaveGroupError": "Không thể rời khỏi nhóm.",
     "userNotFound": "Không tìm thấy người dùng.",
