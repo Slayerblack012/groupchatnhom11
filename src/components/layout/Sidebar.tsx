@@ -230,11 +230,6 @@ function CreateGroupDialog() {
             requestResourceData: groupData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: t('toasts.groupCreateError'),
-        });
     }).finally(() => {
         setIsLoading(false);
     });
@@ -343,8 +338,10 @@ function JoinGroupDialog() {
   const handleJoinGroup = async () => {
     if (!groupId.trim() || !user) return;
     setIsLoading(true);
-
-    const groupRef = doc(db, "groups", groupId.trim());
+  
+    const trimmedGroupId = groupId.trim();
+    const groupRef = doc(db, "groups", trimmedGroupId);
+    
     try {
       const groupSnap = await getDoc(groupRef);
       if (!groupSnap.exists()) {
@@ -356,7 +353,7 @@ function JoinGroupDialog() {
         setIsLoading(false);
         return;
       }
-
+  
       const groupData = groupSnap.data() as Group;
       if (groupData.members.includes(user.uid)) {
         toast({
@@ -367,33 +364,32 @@ function JoinGroupDialog() {
         setIsLoading(false);
         return;
       }
-
+      
       const updateData = { members: arrayUnion(user.uid) };
-      updateDoc(groupRef, updateData).then(() => {
-        toast({
+
+      updateDoc(groupRef, updateData)
+        .then(() => {
+          toast({
             title: "Success!",
-            description: t('toasts.joinSuccess', { groupName: groupSnap.data()?.name }),
-        });
-        setOpen(false);
-        setGroupId("");
-      }).catch(error => {
+            description: t('toasts.joinSuccess', { groupName: groupData.name }),
+          });
+          setOpen(false);
+          setGroupId("");
+        })
+        .catch(error => {
           const permissionError = new FirestorePermissionError({
-              path: `groups/${groupId.trim()}`,
-              operation: 'update',
-              requestResourceData: { members: `arrayUnion(${user.uid})` },
+            path: `groups/${trimmedGroupId}`,
+            operation: 'update',
+            requestResourceData: updateData,
           });
           errorEmitter.emit('permission-error', permissionError);
-          toast({
-              variant: "destructive",
-              title: "Error",
-              description: t('toasts.joinError'),
-          });
-      }).finally(() => {
+        })
+        .finally(() => {
           setIsLoading(false);
-      });
-
+        });
+  
     } catch (error) {
-      console.error("Error fetching group document:", error);
+      console.error("Error fetching group document for join:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -402,6 +398,7 @@ function JoinGroupDialog() {
       setIsLoading(false);
     }
   };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -439,8 +436,7 @@ function JoinGroupDialog() {
     </Dialog>
   );
 }
+    
 
-// This component is no longer used in the sidebar but kept for reference or future use.
-// function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) { ... }
 
     

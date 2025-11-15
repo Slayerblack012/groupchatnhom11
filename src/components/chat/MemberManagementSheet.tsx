@@ -95,19 +95,20 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       const groupRef = doc(db, "groups", group.id);
       const updateData = { members: arrayUnion(userToAdd.uid) };
 
-      updateDoc(groupRef, updateData).then(() => {
+      updateDoc(groupRef, updateData)
+        .then(() => {
           setMembers(prev => [...prev, userToAdd]);
           setNewMemberEmail("");
           toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
-      }).catch(error => {
+        })
+        .catch(error => {
           const permissionError = new FirestorePermissionError({
               path: `groups/${group.id}`,
               operation: 'update',
-              requestResourceData: { members: `arrayUnion(${userToAdd.uid})` },
+              requestResourceData: updateData,
           });
           errorEmitter.emit('permission-error', permissionError);
-          toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
-      });
+        });
 
     } catch (error) {
       console.error("Error querying for member:", error);
@@ -124,18 +125,19 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     const groupRef = doc(db, "groups", group.id);
     const updateData = { members: arrayRemove(memberId) };
     
-    updateDoc(groupRef, updateData).then(() => {
+    updateDoc(groupRef, updateData)
+      .then(() => {
         setMembers(prev => prev.filter(m => m.uid !== memberId));
         toast({ title: "Success", description: t('toasts.memberRemoved') });
-    }).catch(error => {
+      })
+      .catch(error => {
         const permissionError = new FirestorePermissionError({
             path: `groups/${group.id}`,
             operation: 'update',
-            requestResourceData: { members: `arrayRemove(${memberId})` },
+            requestResourceData: updateData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({ variant: "destructive", title: "Error", description: t('toasts.removeMemberError') });
-    });
+      });
   };
 
   const copyGroupIdToClipboard = () => {
@@ -219,5 +221,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     </Sheet>
   );
 }
+
+    
 
     
