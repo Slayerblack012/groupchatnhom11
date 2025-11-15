@@ -28,6 +28,7 @@ import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useLanguage } from "@/providers/language-provider";
 import type { Message } from "@/types";
+import FileUploadPreview from "./FileUploadPreview";
 
 // Debounce hook
 const useDebounce = (callback: () => void, delay: number) => {
@@ -56,6 +57,7 @@ const useDebounce = (callback: () => void, delay: number) => {
 export default function MessageInput({ groupId }: { groupId: string }) {
   const { user } = useAuth();
   const [text, setText] = useState("");
+  const [fileToSend, setFileToSend] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +71,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         await deleteDoc(doc(db, "groups", groupId, "typing", user.uid));
         typingRef.current = false;
       } catch (error) {
-        // Handle error silently, e.g., permissions issue
+        // Handle error silently
       }
     }
   }, [user, groupId]);
@@ -95,51 +97,45 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !user) return;
+    if (!user) return;
+    if (!text.trim() && !fileToSend) return;
+
+    if (text.trim()) {
+        removeTypingStatus();
+        const messagesCollection = collection(db, "groups", groupId, "messages");
+        const messageData: Omit<Message, 'id' | 'createdAt'> = {
+          text,
+          contentType: 'text',
+          senderId: user.uid,
+          senderName: user.displayName,
+          senderPhotoURL: user.photoURL,
+        };
+
+        addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
+          console.error("Error sending message:", error);
+          const permissionError = new FirestorePermissionError({
+            path: `groups/${groupId}/messages`,
+            operation: 'create',
+            requestResourceData: messageData
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: t('toasts.messageSendError'),
+          });
+        });
+        setText("");
+    }
     
-    removeTypingStatus();
-
-    const messagesCollection = collection(db, "groups", groupId, "messages");
-    const messageData: Omit<Message, 'id' | 'createdAt'> = {
-      text,
-      contentType: 'text',
-      groupId: groupId,
-      senderId: user.uid,
-      senderName: user.displayName,
-      senderPhotoURL: user.photoURL,
-    };
-
-    addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
-      console.error("Error sending message:", error);
-      const permissionError = new FirestorePermissionError({
-        path: `groups/${groupId}/messages`,
-        operation: 'create',
-        requestResourceData: messageData
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: t('toasts.messageSendError'),
-      });
-    });
-
-    setText("");
+    if (fileToSend) {
+        handleFileUpload(fileToSend);
+    }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    if (file.size > 20 * 1024 * 1024) { // 20MB limit
-      toast({
-        variant: "destructive",
-        title: t('toasts.fileTooLarge'),
-        description: t('toasts.fileTooLargeDesc', { size: '20MB' }),
-      });
-      return;
-    }
-
+  const handleFileUpload = async (file: File) => {
+    if (!user) return;
+    
     setUploading(true);
     setUploadProgress(0);
 
@@ -163,6 +159,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           console.error("Upload failed:", error);
           toast({ variant: "destructive", title: t('toasts.uploadFailed') });
           setUploading(false);
+          setFileToSend(null);
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
@@ -176,7 +173,6 @@ export default function MessageInput({ groupId }: { groupId: string }) {
             fileUrl: downloadURL,
             fileName: file.name,
             contentType: contentType,
-            groupId: groupId,
             senderId: user.uid,
             senderName: user.displayName,
             senderPhotoURL: user.photoURL,
@@ -197,20 +193,39 @@ export default function MessageInput({ groupId }: { groupId: string }) {
             });
           });
           setUploading(false);
+          setFileToSend(null);
         }
       );
     } catch (error) {
       console.error("Error processing file:", error);
       toast({ variant: "destructive", title: "Error", description: t('toasts.processFileError') });
       setUploading(false);
+      setFileToSend(null);
     }
-
     if(fileInputRef.current) fileInputRef.current.value = "";
   };
-  
+
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 20 * 1024 * 1024) { // 20MB limit
+      toast({
+        variant: "destructive",
+        title: t('toasts.fileTooLarge'),
+        description: t('toasts.fileTooLargeDesc', { size: '20MB' }),
+      });
+      return;
+    }
+    setFileToSend(file);
+    setText(""); // Clear text when a file is selected
+  };
+
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const currentText = e.target.value;
     setText(currentText);
+    if(currentText) setFileToSend(null); // Clear file when text is typed
 
     if (currentText && !typingRef.current) {
         updateTypingStatus();
@@ -225,6 +240,9 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
   return (
     <div>
+       {fileToSend && !uploading && (
+         <FileUploadPreview file={fileToSend} onRemove={() => setFileToSend(null)} />
+      )}
       {uploading && (
         <div className="mb-2 flex items-center gap-2">
             <Progress value={uploadProgress} className="w-full" />
@@ -256,12 +274,14 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           onChange={handleTextChange}
           className="flex-1"
           autoComplete="off"
-          disabled={uploading}
+          disabled={uploading || !!fileToSend}
         />
-        <Button type="submit" size="icon" disabled={!text.trim() || uploading} aria-label={t('messageInput.sendMessage')}>
+        <Button type="submit" size="icon" disabled={(!text.trim() && !fileToSend) || uploading} aria-label={t('messageInput.sendMessage')}>
           <Send className="h-5 w-5" />
         </Button>
       </form>
     </div>
   );
 }
+
+    

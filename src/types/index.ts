@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export interface UserProfile {
@@ -24,7 +25,9 @@ export interface Message {
   fileName?: string;
   contentType: 'text' | 'image' | 'video' | 'file';
   senderId: string;
-  senderName: string;
-  senderPhotoURL: string;
+  senderName: string | null;
+  senderPhotoURL: string | null;
   createdAt: Timestamp;
 }
+
+    
