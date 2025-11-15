@@ -20,9 +20,9 @@ export interface Group {
 export interface Message {
   id: string;
   text?: string;
-  imageUrl?: string;
   fileUrl?: string;
   fileName?: string;
+  contentType: 'text' | 'image' | 'video' | 'file';
   senderId: string;
   senderName: string;
   senderPhotoURL: string;

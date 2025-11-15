@@ -23,6 +23,7 @@ import { compressImage } from "@/lib/image-compression";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { useLanguage } from "@/providers/language-provider";
+import type { Message } from "@/types";
 
 export default function MessageInput({ groupId }: { groupId: string }) {
   const { user } = useAuth();
@@ -38,16 +39,16 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     if (!text.trim() || !user) return;
 
     const messagesCollection = collection(db, "groups", groupId, "messages");
-    const messageData = {
+    const messageData: Omit<Message, 'id' | 'createdAt'> = {
       text,
+      contentType: 'text',
       groupId: groupId,
       senderId: user.uid,
       senderName: user.displayName,
       senderPhotoURL: user.photoURL,
-      createdAt: serverTimestamp(),
     };
 
-    addDoc(messagesCollection, messageData).catch((error) => {
+    addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
       console.error("Error sending message:", error);
       const permissionError = new FirestorePermissionError({
         path: `groups/${groupId}/messages`,
@@ -73,7 +74,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       toast({
         variant: "destructive",
         title: t('toasts.fileTooLarge'),
-        description: t('toasts.fileTooLargeDesc'),
+        description: t('toasts.fileTooLargeDesc', { size: '20MB' }),
       });
       return;
     }
@@ -83,10 +84,12 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
     try {
       const isImage = file.type.startsWith("image/");
-      // The file to be uploaded. It's either the original file or a compressed Blob.
+      const isVideo = file.type.startsWith("video/");
+      
       const fileToUpload: File | Blob = isImage ? await compressImage(file) : file;
       
-      const storageRef = ref(storage, `group_files/${groupId}/${Date.now()}_${file.name}`);
+      const timestamp = Date.now();
+      const storageRef = ref(storage, `group_files/${groupId}/${timestamp}_${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
       uploadTask.on(
@@ -103,16 +106,22 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
           const messagesCollection = collection(db, "groups", groupId, "messages");
-          const messageData = {
-            ...(isImage ? { imageUrl: downloadURL } : { fileUrl: downloadURL, fileName: file.name }),
+          
+          let contentType: Message['contentType'] = 'file';
+          if (isImage) contentType = 'image';
+          if (isVideo) contentType = 'video';
+
+          const messageData: Omit<Message, 'id' | 'createdAt'> = {
+            fileUrl: downloadURL,
+            fileName: file.name,
+            contentType: contentType,
             groupId: groupId,
             senderId: user.uid,
             senderName: user.displayName,
             senderPhotoURL: user.photoURL,
-            createdAt: serverTimestamp(),
           };
 
-          addDoc(messagesCollection, messageData).catch((error) => {
+          addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
             console.error("Error sending file message:", error);
             const permissionError = new FirestorePermissionError({
                 path: `groups/${groupId}/messages`,
@@ -153,15 +162,16 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           size="icon"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
+          aria-label={t('messageInput.uploadFile')}
         >
           <Paperclip className="h-5 w-5" />
-          <span className='sr-only'>{t('messageInput.uploadFile')}</span>
         </Button>
         <Input
           ref={fileInputRef}
           type="file"
           className="hidden"
           onChange={handleFileChange}
+          accept="image/*,video/*"
         />
         <Input
           type="text"
@@ -172,7 +182,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           autoComplete="off"
           disabled={uploading}
         />
-        <Button type="submit" size="icon" disabled={!text.trim() || uploading}>
+        <Button type="submit" size="icon" disabled={!text.trim() || uploading} aria-label={t('messageInput.sendMessage')}>
           <Send className="h-5 w-5" />
         </Button>
       </form>

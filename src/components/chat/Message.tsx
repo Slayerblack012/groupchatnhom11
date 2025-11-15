@@ -6,13 +6,65 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
-import { File } from "lucide-react";
+import { File, Video } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 interface MessageProps {
   message: MessageType;
   currentUserId: string;
 }
+
+const renderContent = (message: MessageType, t: (key: string) => string) => {
+    switch (message.contentType) {
+        case 'image':
+            return (
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Image
+                            src={message.fileUrl!}
+                            alt="Uploaded image"
+                            width={300}
+                            height={300}
+                            className="mt-2 rounded-lg cursor-pointer"
+                        />
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl p-0">
+                        <Image
+                            src={message.fileUrl!}
+                            alt="Uploaded image"
+                            width={1000}
+                            height={1000}
+                            className="w-full h-auto rounded-lg"
+                        />
+                    </DialogContent>
+                 </Dialog>
+            );
+        case 'video':
+            return (
+                <video
+                    src={message.fileUrl!}
+                    controls
+                    className="mt-2 rounded-lg max-w-sm"
+                />
+            );
+        case 'file':
+             return (
+                <a
+                    href={message.fileUrl!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 flex items-center gap-2 rounded-lg bg-background/20 p-3 text-sm font-medium hover:bg-background/30"
+                >
+                    <File className="h-6 w-6 flex-shrink-0" />
+                    <span className="truncate">{message.fileName || t('message.downloadFile')}</span>
+                </a>
+            );
+        case 'text':
+        default:
+            return message.text ? <p className="text-sm">{message.text}</p> : null;
+    }
+};
 
 export default function Message({ message, currentUserId }: MessageProps) {
   const { t } = useLanguage();
@@ -45,28 +97,8 @@ export default function Message({ message, currentUserId }: MessageProps) {
               : "rounded-tl-none bg-muted"
           )}
         >
-          <CardContent className="p-3">
-            {message.text && <p className="text-sm">{message.text}</p>}
-            {message.imageUrl && (
-              <Image
-                src={message.imageUrl}
-                alt="Uploaded image"
-                width={300}
-                height={300}
-                className="mt-2 rounded-lg"
-              />
-            )}
-            {message.fileUrl && (
-              <a
-                href={message.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 flex items-center gap-2 rounded-lg bg-background/20 p-3 text-sm font-medium hover:bg-background/30"
-              >
-                <File className="h-6 w-6 flex-shrink-0" />
-                <span className="truncate">{message.fileName || t('message.downloadFile')}</span>
-              </a>
-            )}
+          <CardContent className={cn("p-3", message.contentType === 'image' && "p-1")}>
+            {renderContent(message, t)}
           </CardContent>
         </Card>
         <div className="text-xs text-muted-foreground">
