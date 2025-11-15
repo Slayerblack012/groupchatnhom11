@@ -83,7 +83,8 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
     try {
       const isImage = file.type.startsWith("image/");
-      const fileToUpload = isImage ? await compressImage(file) : file;
+      // The file to be uploaded. It's either the original file or a compressed Blob.
+      const fileToUpload: File | Blob = isImage ? await compressImage(file) : file;
       
       const storageRef = ref(storage, `group_files/${groupId}/${Date.now()}_${file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
