@@ -95,9 +95,12 @@ service cloud.firestore {
       function isSignedIn() {
         return request.auth != null;
       }
+      function isGroupMember(groupId) {
+        return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+      }
 
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid && request.resource.data.groupId == groupId;
+      allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
       allow update: if false;
       allow delete: if false;
     }
