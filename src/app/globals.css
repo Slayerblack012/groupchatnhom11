@@ -8,17 +8,17 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 96%; /* #F5F5F5 */
+    --background: 0 0% 93%; /* Lighter gray background */
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 221 89% 64%; /* #4285F4 */
+    --primary: 210 100% 56%; /* Telegram-like blue */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 0 0% 96.1%;
+    --muted: 0 0% 90%; /* Incoming message bubble */
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 36 100% 50%; /* #FF9800 */
     --accent-foreground: 240 5.9% 10%;
@@ -26,7 +26,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 221 89% 64%;
+    --ring: 210 100% 56%;
     --radius: 0.5rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -35,25 +35,25 @@ body {
     --chart-5: 27 87% 67%;
   }
   .dark {
-    --background: 0 0% 20%; /* #333333 */
+    --background: 222 47% 11%; /* Dark blue-gray background */
     --foreground: 0 0% 98%;
-    --card: 0 0% 14.9%;
+    --card: 222 47% 16%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 14.9%;
+    --popover: 222 47% 11%;
     --popover-foreground: 0 0% 98%;
-    --primary: 221 89% 64%; /* #4285F4 */
+    --primary: 210 100% 56%; /* Telegram-like blue */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 222 47% 16%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
+    --muted: 222 47% 22%; /* Incoming message bubble */
     --muted-foreground: 0 0% 63.9%;
     --accent: 36 100% 50%; /* #FF9800 */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 221 89% 64%;
+    --border: 222 47% 20%;
+    --input: 222 47% 18%;
+    --ring: 210 100% 56%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
