@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user in the GroupTalk application.",
+      "description": "Represents a user in the groupchat application.",
       "properties": {
         "id": {
           "type": "string",
@@ -184,6 +184,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support a real-time group chat application (GroupTalk) with a focus on secure access control and efficient data retrieval. It leverages path-based ownership for user data and a membership map for group authorization. To ensure Authorization Independence, key authorization data (adminId and memberIds) from the `Group` document is denormalized to the `Message` documents. This eliminates the need for `get()` calls in security rules when writing messages. This strategy ensures atomic operations and simplifies security rule logic. Furthermore, separate collections for user profiles, groups, and messages ensure a clear separation of concerns and enable secure `list` operations.\n\nThe structure also takes into consideration the app requirements of push notifications and scalable data models. Segregation by path enables scalable queries and optimized read operations."
+    "reasoning": "The Firestore data structure is designed to support a real-time group chat application (groupchat) with a focus on secure access control and efficient data retrieval. It leverages path-based ownership for user data and a membership map for group authorization. To ensure Authorization Independence, key authorization data (adminId and memberIds) from the `Group` document is denormalized to the `Message` documents. This eliminates the need for `get()` calls in security rules when writing messages. This strategy ensures atomic operations and simplifies security rule logic. Furthermore, separate collections for user profiles, groups, and messages ensure a clear separation of concerns and enable secure `list` operations.\n\nThe structure also takes into consideration the app requirements of push notifications and scalable data models. Segregation by path enables scalable queries and optimized read operations."
   }
 }

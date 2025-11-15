@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for GroupTalk",
+  "description": "Cloud Functions for groupchat",
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^12.1.0",

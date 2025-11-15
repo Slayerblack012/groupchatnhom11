@@ -1,5 +1,5 @@
 /**
- * @fileOverview Firestore Security Rules for GroupTalk application.
+ * @fileOverview Firestore Security Rules for groupchat application.
  *
  * Core Philosophy:
  * This ruleset enforces a combination of ownership-based and role-based access control.

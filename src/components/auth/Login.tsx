@@ -62,7 +62,7 @@ export default function Login() {
         <div className="mb-8 flex items-center justify-center">
           <MessageSquare className="h-12 w-12 text-primary" />
           <h1 className="ml-4 font-headline text-5xl font-bold text-foreground">
-            GroupTalk
+            groupchat
           </h1>
         </div>
         <p className="mb-10 text-lg text-muted-foreground">

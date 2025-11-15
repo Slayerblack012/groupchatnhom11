@@ -5,7 +5,7 @@ import {AuthProvider} from '@/providers/auth-provider';
 import {Toaster} from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'GroupTalk',
+  title: 'groupchat',
   description: 'Real-time group chat application',
 };
 

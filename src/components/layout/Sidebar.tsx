@@ -92,7 +92,7 @@ export default function Sidebar({
       <div className="p-4">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">GroupTalk</h1>
+          <h1 className="text-2xl font-bold">groupchat</h1>
         </div>
       </div>
 
