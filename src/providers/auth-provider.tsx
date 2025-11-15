@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -7,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut 
 } from "firebase/auth";
-import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import type { UserProfile } from "@/types";
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -30,18 +31,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
         const userRef = doc(db, "users", firebaseUser.uid);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
+        const docSnap = await getDoc(userRef).catch(err => {
+            console.warn("Failed to fetch user profile, maybe permissions?", err);
+            return null;
+        });
+
+        if (docSnap && docSnap.exists()) {
           setUser(docSnap.data() as UserProfile);
-        } else {
+        } else if(firebaseUser) {
            const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName || firebaseUser.email,
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL,
           };
-          // Using non-blocking write with contextual error handling
-          setDocumentNonBlocking(userRef, newUserProfile, { merge: false });
+          // This call might be the one failing. It's already non-blocking.
+          setDocumentNonBlocking(doc(db, "users", firebaseUser.uid), newUserProfile, { merge: false });
           setUser(newUserProfile);
         }
       } else {
@@ -61,15 +66,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const firebaseUser = userCredential.user;
     
-    // Create user profile
     const newUserProfile: UserProfile = {
       uid: firebaseUser.uid,
-      displayName: firebaseUser.displayName || email, // Use email as fallback
+      displayName: firebaseUser.displayName || email,
       email: firebaseUser.email,
       photoURL: firebaseUser.photoURL,
     };
     const userRef = doc(db, "users", firebaseUser.uid);
-    // Use the non-blocking function which handles contextual errors
+    
+    // Using non-blocking write with contextual error handling
     setDocumentNonBlocking(userRef, newUserProfile, { merge: false });
 
     // This is handled by onAuthStateChanged but we can set it here to speed up UI
