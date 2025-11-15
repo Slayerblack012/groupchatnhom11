@@ -12,6 +12,10 @@ import {
   getDoc,
   arrayUnion,
   arrayRemove,
+  limit,
+  startAt,
+  endAt,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Group, UserProfile } from "@/types";
@@ -35,6 +39,7 @@ import { useLanguage } from "@/providers/language-provider";
 import { Label } from "../ui/label";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Separator } from "../ui/separator";
 
 interface MemberManagementSheetProps {
   group: Group;
@@ -44,7 +49,9 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
   const { user: adminUser } = useAuth();
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
-  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -73,20 +80,42 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     fetchMembers();
   }, [group.members, toast]);
 
-  const handleAddMember = async () => {
-    if (!newMemberEmail.trim()) return;
+  useEffect(() => {
+    const searchUsers = async () => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        setIsSearching(true);
+        try {
+            const usersRef = collection(db, "users");
+            const q = query(
+                usersRef, 
+                orderBy("email"), 
+                startAt(searchQuery), 
+                endAt(searchQuery + '\uf8ff'),
+                limit(10)
+            );
+            const querySnapshot = await getDocs(q);
+            const users = querySnapshot.docs.map(doc => doc.data() as UserProfile);
+            setSearchResults(users.filter(u => u.uid !== adminUser?.uid));
+        } catch (error) {
+            console.error("Error searching users:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to search for users." });
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", newMemberEmail.trim()));
-      const querySnapshot = await getDocs(q);
+    const debounceTimer = setTimeout(() => {
+        searchUsers();
+    }, 300);
 
-      if (querySnapshot.empty) {
-        toast({ variant: "destructive", description: t('toasts.userNotFound') });
-        return;
-      }
+    return () => clearTimeout(debounceTimer);
+}, [searchQuery, adminUser?.uid, toast]);
 
-      const userToAdd = querySnapshot.docs[0].data() as UserProfile;
+
+  const handleAddMember = async (userToAdd: UserProfile) => {
       if (group.members.includes(userToAdd.uid)) {
         toast({ description: t('toasts.userAlreadyInGroup') });
         return;
@@ -98,7 +127,8 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       updateDoc(groupRef, updateData)
         .then(() => {
           setMembers(prev => [...prev, userToAdd]);
-          setNewMemberEmail("");
+          setSearchQuery("");
+          setSearchResults([]);
           toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
         })
         .catch(error => {
@@ -109,11 +139,6 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
           });
           errorEmitter.emit('permission-error', permissionError);
         });
-
-    } catch (error) {
-      console.error("Error querying for member:", error);
-      toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
-    }
   };
 
   const handleRemoveMember = async (memberId: string) => {
@@ -156,13 +181,14 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
           <span className="sr-only">{t('memberManagement.title')}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent className="flex flex-col">
         <SheetHeader>
           <SheetTitle>{t('memberManagement.title')}</SheetTitle>
           <SheetDescription>
             {t('memberManagement.description', { groupName: group.name })}
           </SheetDescription>
         </SheetHeader>
+
         <div className="py-4">
             <Label className="text-sm font-semibold">{t('joinGroupDialog.groupIdLabel')}</Label>
             <div className="flex items-center space-x-2 pt-2">
@@ -173,23 +199,45 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
                 </Button>
             </div>
         </div>
+        <Separator />
         <div className="py-4">
           <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.addMember')}</h3>
           <div className="flex gap-2">
             <Input
               type="email"
               placeholder={t('memberManagement.addMemberPlaceholder')}
-              value={newMemberEmail}
-              onChange={(e) => setNewMemberEmail(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <Button onClick={handleAddMember} size="icon" variant="outline" aria-label="Add Member">
-              <Plus className="h-4 w-4" />
-            </Button>
+          </div>
+          <div className="mt-2 space-y-2">
+              {isSearching && <Skeleton className="h-12 w-full"/>}
+              {!isSearching && searchResults.map(user => (
+                  <div key={user.uid} className="flex items-center justify-between rounded-md border p-2">
+                      <div className="flex items-center gap-2">
+                         <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.photoURL || ""} alt={user.displayName || ""} />
+                            <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                         </Avatar>
+                         <div>
+                            <p className="text-sm font-medium">{user.displayName}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                         </div>
+                      </div>
+                      <Button size="sm" onClick={() => handleAddMember(user)}>
+                          <Plus className="h-4 w-4 mr-2"/> Add
+                      </Button>
+                  </div>
+              ))}
+              {!isSearching && searchResults.length === 0 && searchQuery && (
+                  <p className="text-sm text-muted-foreground text-center py-2">{t('toasts.userNotFound')}</p>
+              )}
           </div>
         </div>
-        <div className="py-4">
+        <Separator />
+        <div className="py-4 flex-1 flex flex-col min-h-0">
           <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.currentMembers')}</h3>
-          <ScrollArea className="h-72">
+          <ScrollArea className="flex-1">
             <div className="space-y-2">
               {loadingMembers ? (
                  [...Array(3)].map((_,i) => <Skeleton key={i} className="h-12 w-full"/>)
@@ -221,7 +269,3 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     </Sheet>
   );
 }
-
-    
-
-    

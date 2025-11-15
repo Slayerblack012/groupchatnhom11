@@ -15,7 +15,7 @@
  * - /roles_admin/{userId}: Document existence signifies admin role.
  *
  * Key Security Decisions:
- * - User listing is disabled.
+ * - User listing is enabled for authenticated users to allow searching.
  * - Admin role assignments are controlled via a separate collection.
  * - Default security posture is strict; any access not explicitly allowed is denied.
  *
@@ -36,7 +36,7 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (create) - Authenticated user can create their own profile if the userId matches their auth.uid.
      * @allow (get, update, delete) - Authenticated user can read, update, or delete their own profile.
-     * @deny (list) - User listing is not allowed.
+     * @allow (list) - Authenticated users can list users to search for them.
      * @deny (create) - Authenticated user cannot create profile if userId does not match their auth.uid.
      * @deny (update, delete) - An unauthenticated user cannot update or delete any profile.
      * @principle Enforces document ownership for user profiles, validating the UID on create and enforcing immutability of the UID on update.
@@ -45,10 +45,13 @@ service cloud.firestore {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
+      function isSignedIn() {
+        return request.auth.uid != null;
+      }
 
       allow read, update, delete: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow list: if false;
+      allow list: if isSignedIn();
     }
 
     /**
