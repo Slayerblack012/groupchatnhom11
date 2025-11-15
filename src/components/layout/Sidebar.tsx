@@ -378,7 +378,7 @@ function JoinGroupDialog() {
         })
         .catch(error => {
           const permissionError = new FirestorePermissionError({
-            path: `groups/${trimmedGroupId}`,
+            path: groupRef.path,
             operation: 'update',
             requestResourceData: updateData,
           });
@@ -389,13 +389,12 @@ function JoinGroupDialog() {
         });
   
     } catch (error) {
-      console.error("Error fetching group document for join:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: t('toasts.joinError'),
-      });
-      setIsLoading(false);
+        const permissionError = new FirestorePermissionError({
+            path: groupRef.path,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setIsLoading(false);
     }
   };
 
@@ -438,5 +437,7 @@ function JoinGroupDialog() {
 }
     
 
+
+    
 
     
