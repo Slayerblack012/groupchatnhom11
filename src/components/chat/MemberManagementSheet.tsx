@@ -10,6 +10,8 @@ import {
   where,
   getDocs,
   getDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Group, UserProfile } from "@/types";
@@ -90,7 +92,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       
       const groupRef = doc(db, "groups", group.id);
       await updateDoc(groupRef, {
-        members: [...group.members, userToAdd.uid],
+        members: arrayUnion(userToAdd.uid),
       });
 
       // Optimistically update UI, but Firestore listener will correct it
@@ -112,7 +114,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     try {
         const groupRef = doc(db, "groups", group.id);
         await updateDoc(groupRef, {
-            members: group.members.filter(id => id !== memberId),
+            members: arrayRemove(memberId),
         });
 
         // Optimistically update UI
@@ -206,3 +208,5 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     </Sheet>
   );
 }
+
+    

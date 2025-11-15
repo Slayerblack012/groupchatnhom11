@@ -11,6 +11,7 @@ import {
   updateDoc,
   getDoc,
   setDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { useAuth } from "@/providers/auth-provider";
 import { db } from "@/lib/firebase/config";
@@ -358,7 +359,7 @@ function JoinGroupDialog() {
       }
 
       await updateDoc(groupRef, {
-        members: [...groupData.members, user.uid],
+        members: arrayUnion(user.uid),
       });
 
       toast({
@@ -419,3 +420,4 @@ function JoinGroupDialog() {
 // This component is no longer used in the sidebar but kept for reference or future use.
 // function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) { ... }
 
+    
