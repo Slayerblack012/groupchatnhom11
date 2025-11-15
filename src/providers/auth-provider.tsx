@@ -96,6 +96,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(() => {
         // This is handled by onAuthStateChanged but we can set it here to speed up UI
         setUser(newUserProfile); 
+        // If the user is the admin, create the admin role document
+        if (email === 'admin@gmail.com') {
+            const adminRoleRef = doc(db, "roles_admin", firebaseUser.uid);
+            setDoc(adminRoleRef, { admin: true }).catch(error => {
+                const permissionError = new FirestorePermissionError({
+                    path: adminRoleRef.path,
+                    operation: 'create',
+                    requestResourceData: { admin: true },
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
+        }
       })
       .catch(error => {
         const permissionError = new FirestorePermissionError({
@@ -133,5 +145,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

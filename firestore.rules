@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Firestore Security Rules for groupchat application.
  *
@@ -71,7 +72,7 @@ service cloud.firestore {
      */
     match /groups/{groupId} {
       function isSignedIn() {
-        return request.auth != null;
+        return request.auth.uid != null;
       }
 
       function isAdmin(adminId) {
@@ -84,7 +85,7 @@ service cloud.firestore {
 
       allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if isExistingAdmin(resource.data.adminId);
+      allow update: if isExistingAdmin(resource.data.adminId) || request.auth.uid in resource.data.members;
       allow delete: if isExistingAdmin(resource.data.adminId);
     }
 
@@ -124,7 +125,7 @@ service cloud.firestore {
         }
         allow get: if isSignedIn();
         allow list: if false;
-        allow create: if false;
+        allow create: if isSignedIn();
         allow update: if false;
         allow delete: if false;
     }
