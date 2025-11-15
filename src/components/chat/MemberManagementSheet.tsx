@@ -33,6 +33,8 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
 import { useLanguage } from "@/providers/language-provider";
 import { Label } from "../ui/label";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 interface MemberManagementSheetProps {
   group: Group;
@@ -91,16 +93,24 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       }
       
       const groupRef = doc(db, "groups", group.id);
-      await updateDoc(groupRef, {
-        members: arrayUnion(userToAdd.uid),
+      const updateData = { members: arrayUnion(userToAdd.uid) };
+
+      updateDoc(groupRef, updateData).then(() => {
+          setMembers(prev => [...prev, userToAdd]);
+          setNewMemberEmail("");
+          toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
+      }).catch(error => {
+          const permissionError = new FirestorePermissionError({
+              path: `groups/${group.id}`,
+              operation: 'update',
+              requestResourceData: { members: `arrayUnion(${userToAdd.uid})` },
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
       });
 
-      // Optimistically update UI, but Firestore listener will correct it
-      setMembers(prev => [...prev, userToAdd]);
-      setNewMemberEmail("");
-      toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
     } catch (error) {
-      console.error("Error adding member:", error);
+      console.error("Error querying for member:", error);
       toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
     }
   };
@@ -111,20 +121,21 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
         return;
     }
 
-    try {
-        const groupRef = doc(db, "groups", group.id);
-        await updateDoc(groupRef, {
-            members: arrayRemove(memberId),
-        });
-
-        // Optimistically update UI
+    const groupRef = doc(db, "groups", group.id);
+    const updateData = { members: arrayRemove(memberId) };
+    
+    updateDoc(groupRef, updateData).then(() => {
         setMembers(prev => prev.filter(m => m.uid !== memberId));
         toast({ title: "Success", description: t('toasts.memberRemoved') });
-
-    } catch (error) {
-        console.error("Error removing member:", error);
+    }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: `groups/${group.id}`,
+            operation: 'update',
+            requestResourceData: { members: `arrayRemove(${memberId})` },
+        });
+        errorEmitter.emit('permission-error', permissionError);
         toast({ variant: "destructive", title: "Error", description: t('toasts.removeMemberError') });
-    }
+    });
   };
 
   const copyGroupIdToClipboard = () => {

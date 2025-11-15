@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/providers/language-provider";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function Sidebar({
   onSelectGroup,
@@ -210,26 +212,32 @@ function CreateGroupDialog() {
       return;
     }
 
-    try {
-      const groupRef = doc(db, 'groups', finalGroupId);
-      await setDoc(groupRef, {
+    const groupData = {
         id: finalGroupId,
         name: groupName,
         admin: user.uid,
         members: [user.uid],
         createdAt: new Date(),
-      });
-      setCreatedGroupId(finalGroupId);
-    } catch (error) {
-      console.error("Error creating group:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: t('toasts.groupCreateError'),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    };
+    const groupRef = doc(db, 'groups', finalGroupId);
+
+    setDoc(groupRef, groupData).then(() => {
+        setCreatedGroupId(finalGroupId);
+    }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: `groups/${finalGroupId}`,
+            operation: 'create',
+            requestResourceData: groupData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: t('toasts.groupCreateError'),
+        });
+    }).finally(() => {
+        setIsLoading(false);
+    });
   };
 
   const copyToClipboard = () => {
@@ -345,6 +353,7 @@ function JoinGroupDialog() {
           title: "Not Found",
           description: t('toasts.groupNotFound'),
         });
+        setIsLoading(false);
         return;
       }
 
@@ -355,28 +364,42 @@ function JoinGroupDialog() {
         });
         setOpen(false);
         setGroupId("");
+        setIsLoading(false);
         return;
       }
 
-      await updateDoc(groupRef, {
-        members: arrayUnion(user.uid),
+      const updateData = { members: arrayUnion(user.uid) };
+      updateDoc(groupRef, updateData).then(() => {
+        toast({
+            title: "Success!",
+            description: t('toasts.joinSuccess', { groupName: groupSnap.data()?.name }),
+        });
+        setOpen(false);
+        setGroupId("");
+      }).catch(error => {
+          const permissionError = new FirestorePermissionError({
+              path: `groups/${groupId.trim()}`,
+              operation: 'update',
+              requestResourceData: { members: `arrayUnion(${user.uid})` },
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: t('toasts.joinError'),
+          });
+      }).finally(() => {
+          setIsLoading(false);
       });
 
-      toast({
-        title: "Success!",
-        description: t('toasts.joinSuccess', { groupName: groupSnap.data().name }),
-      });
-      setOpen(false);
-      setGroupId("");
     } catch (error) {
-      console.error("Error joining group:", error);
+      console.error("Error fetching group document:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: t('toasts.joinError'),
       });
-    } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
   return (
