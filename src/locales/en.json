@@ -1,0 +1,131 @@
+{
+  "login": {
+    "title": "Login",
+    "description": "Enter your credentials to access your account.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "button": "Login",
+    "appName": "groupchat",
+    "appSlogan": "The simple, real-time chat app for your team."
+  },
+  "register": {
+    "title": "Register",
+    "description": "Create a new account to start chatting.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "button": "Create Account"
+  },
+  "sidebar": {
+    "yourGroups": "YOUR GROUPS",
+    "createGroup": "Create Group",
+    "joinGroup": "Join Group",
+    "settings": "Settings"
+  },
+  "createGroupDialog": {
+    "title": "Create a new group",
+    "description": "Enter a name for your new group. You can invite others later.",
+    "groupNameLabel": "Group Name",
+    "groupNamePlaceholder": "e.g., Project Phoenix",
+    "createButton": "Create",
+    "createdTitle": "Group Created!",
+    "createdDescription": "Share this ID with others to let them join your group.",
+    "copyButton": "Copy",
+    "doneButton": "Done"
+  },
+  "joinGroupDialog": {
+    "title": "Join an existing group",
+    "description": "Enter the Group ID you received to join the chat.",
+    "groupIdLabel": "Group ID",
+    "groupIdPlaceholder": "Paste Group ID here",
+    "joinButton": "Join"
+  },
+  "chatHeader": {
+    "members": "members",
+    "member": "member",
+    "manageMembers": "Manage Members",
+    "leaveGroup": "Leave Group"
+  },
+  "memberManagement": {
+    "title": "Manage Members",
+    "description": "Add or remove members from '{groupName}'.",
+    "addMember": "Add Member",
+    "addMemberPlaceholder": "user@example.com",
+    "currentMembers": "Current Members",
+    "admin": "Admin",
+    "member": "Member"
+  },
+  "leaveGroupDialog": {
+    "confirmTitle": "Are you absolutely sure?",
+    "confirmDescription": "You are about to leave the group \"{groupName}\". You will no longer be able to see messages or participate in this group. This action cannot be undone.",
+    "cancelButton": "Cancel",
+    "leaveButton": "Leave Group"
+  },
+  "messageInput": {
+    "placeholder": "Type a message...",
+    "uploadFile": "Upload File"
+  },
+  "message": {
+    "you": "You",
+    "sending": "sending...",
+    "downloadFile": "Download File"
+  },
+  "welcome": {
+    "title": "Welcome to groupchat",
+    "description": "Select a group from the sidebar to start chatting,\nor create a new group to get started."
+  },
+  "settings": {
+    "title": "Settings",
+    "accountTitle": "Account",
+    "accountDescription": "This is your public profile information.",
+    "logoutButton": "Log Out",
+    "appearanceTitle": "Appearance",
+    "appearanceDescription": "Customize the look and feel of the app.",
+    "themeMode": "Theme Mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "languageTitle": "Language",
+    "languageDescription": "Choose your preferred language.",
+    "languageLabel": "Language",
+    "notificationsTitle": "Notifications",
+    "notificationsDescription": "Manage how you receive notifications.",
+    "notificationsToggle": "Get notified for new messages",
+    "notificationsUnsupported": "Notifications are not supported on this browser or device."
+  },
+  "toasts": {
+    "fillFields": "Please fill in all fields.",
+    "passwordsNoMatch": "Passwords do not match.",
+    "loginFailed": "Login Failed",
+    "signUpFailed": "Sign Up Failed",
+    "adminLeaveError": "Admins cannot leave the group. Please transfer ownership to another member first.",
+    "groupLeftSuccess": "You have left the group: {groupName}",
+    "leaveGroupError": "Failed to leave group.",
+    "userNotFound": "User not found.",
+    "userAlreadyInGroup": "User is already in the group.",
+    "memberAdded": "{displayName} added to the group.",
+    "addMemberError": "Failed to add member.",
+    "removeMemberError": "Failed to remove member.",
+    "cannotRemoveAdmin": "Cannot remove the group admin.",
+    "memberRemoved": "Member removed from the group.",
+    "messageSendError": "Failed to send message.",
+    "fileTooLarge": "File too large",
+    "fileTooLargeDesc": "Please upload files smaller than 20MB.",
+    "uploadFailed": "Upload Failed",
+    "fileSendError": "Failed to send file.",
+    "processFileError": "Could not process file.",
+    "fetchGroupsError": "Could not fetch your groups.",
+    "groupIdCopied": "Group ID copied to clipboard.",
+    "groupCreateError": "Failed to create group. Please try again.",
+    "groupNotFound": "No group exists with that ID.",
+    "alreadyMember": "You are already a member of this group.",
+    "joinSuccess": "You have joined the group: {groupName}",
+    "joinError": "Failed to join group. Please try again.",
+    "notificationsNotSupported": "Push notifications are not supported on this browser.",
+    "notificationsEnabled": "Notifications enabled.",
+    "getNotificationTokenError": "Could not get notification token.",
+    "notificationPermissionDenied": "Notification permission denied.",
+    "enableNotificationsError": "Failed to enable notifications.",
+    "notificationsDisabled": "Notifications disabled locally. Note: Server may still send pushes until token expires."
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/providers/auth-provider";
 import type { Group } from "@/types";
-import { Users, LogOut, X } from "lucide-react";
+import { Users, LogOut } from "lucide-react";
 import MemberManagementSheet from "./MemberManagementSheet";
 import { Button } from "../ui/button";
 import {
@@ -18,6 +18,7 @@ import { useState } from "react";
 import { doc, updateDoc, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/providers/language-provider";
 
 interface ChatHeaderProps {
   group: Group;
@@ -26,6 +27,7 @@ interface ChatHeaderProps {
 
 export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isAdmin = user?.uid === group.admin;
 
   return (
@@ -37,8 +39,10 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
         <div>
           <h2 className="text-lg font-semibold">{group.name}</h2>
           <p className="text-xs text-muted-foreground">
-            {group.members.length} member
-            {group.members.length > 1 ? "s" : ""}
+            {group.members.length}{" "}
+            {group.members.length > 1
+              ? t("chatHeader.members")
+              : t("chatHeader.member")}
           </p>
         </div>
       </div>
@@ -54,6 +58,7 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
 function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) {
     const { user } = useAuth();
     const { toast } = useToast();
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
 
     const handleLeaveGroup = async () => {
@@ -62,8 +67,8 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
         if (user.uid === group.admin) {
             toast({
                 variant: "destructive",
-                title: "Action not allowed",
-                description: "Admins cannot leave the group. Please transfer ownership to another member first.",
+                title: t('toasts.adminLeaveError'),
+                description: t('toasts.adminLeaveError'),
             });
             return;
         }
@@ -74,8 +79,8 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
                 members: arrayRemove(user.uid),
             });
             toast({
-                title: "Success",
-                description: `You have left the group: ${group.name}`,
+                title: t('toasts.groupLeftSuccess', { groupName: group.name }),
+                description: t('toasts.groupLeftSuccess', { groupName: group.name }),
             });
             onLeave();
             setOpen(false);
@@ -83,8 +88,8 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             console.error("Error leaving group:", error);
             toast({
                 variant: "destructive",
-                title: "Error",
-                description: "Failed to leave group.",
+                title: t('toasts.leaveGroupError'),
+                description: t('toasts.leaveGroupError'),
             });
         }
     };
@@ -94,19 +99,19 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                     <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Leave Group</span>
+                    <span className="sr-only">{t('chatHeader.leaveGroup')}</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogTitle>{t('leaveGroupDialog.confirmTitle')}</DialogTitle>
                     <DialogDescription>
-                        You are about to leave the group "{group.name}". You will no longer be able to see messages or participate in this group. This action cannot be undone.
+                        {t('leaveGroupDialog.confirmDescription', { groupName: group.name })}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleLeaveGroup}>Leave Group</Button>
+                    <Button variant="outline" onClick={() => setOpen(false)}>{t('leaveGroupDialog.cancelButton')}</Button>
+                    <Button variant="destructive" onClick={handleLeaveGroup}>{t('leaveGroupDialog.leaveButton')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

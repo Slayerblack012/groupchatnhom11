@@ -1,0 +1,131 @@
+{
+  "login": {
+    "title": "Đăng nhập",
+    "description": "Nhập thông tin đăng nhập của bạn để truy cập tài khoản.",
+    "emailLabel": "Email",
+    "passwordLabel": "Mật khẩu",
+    "button": "Đăng nhập",
+    "appName": "groupchat",
+    "appSlogan": "Ứng dụng trò chuyện thời gian thực đơn giản cho nhóm của bạn."
+  },
+  "register": {
+    "title": "Đăng ký",
+    "description": "Tạo tài khoản mới để bắt đầu trò chuyện.",
+    "emailLabel": "Email",
+    "passwordLabel": "Mật khẩu",
+    "confirmPasswordLabel": "Xác nhận mật khẩu",
+    "button": "Tạo tài khoản"
+  },
+  "sidebar": {
+    "yourGroups": "NHÓM CỦA BẠN",
+    "createGroup": "Tạo nhóm",
+    "joinGroup": "Tham gia nhóm",
+    "settings": "Cài đặt"
+  },
+  "createGroupDialog": {
+    "title": "Tạo nhóm mới",
+    "description": "Nhập tên cho nhóm mới của bạn. Bạn có thể mời người khác sau.",
+    "groupNameLabel": "Tên nhóm",
+    "groupNamePlaceholder": "VD: Dự án Phượng hoàng",
+    "createButton": "Tạo",
+    "createdTitle": "Đã tạo nhóm!",
+    "createdDescription": "Chia sẻ ID này với người khác để họ tham gia nhóm của bạn.",
+    "copyButton": "Sao chép",
+    "doneButton": "Xong"
+  },
+  "joinGroupDialog": {
+    "title": "Tham gia một nhóm hiện có",
+    "description": "Nhập ID nhóm bạn nhận được để tham gia cuộc trò chuyện.",
+    "groupIdLabel": "ID nhóm",
+    "groupIdPlaceholder": "Dán ID nhóm vào đây",
+    "joinButton": "Tham gia"
+  },
+  "chatHeader": {
+    "members": "thành viên",
+    "member": "thành viên",
+    "manageMembers": "Quản lý thành viên",
+    "leaveGroup": "Rời khỏi nhóm"
+  },
+  "memberManagement": {
+    "title": "Quản lý thành viên",
+    "description": "Thêm hoặc xóa thành viên khỏi '{groupName}'.",
+    "addMember": "Thêm thành viên",
+    "addMemberPlaceholder": "user@example.com",
+    "currentMembers": "Thành viên hiện tại",
+    "admin": "Quản trị viên",
+    "member": "Thành viên"
+  },
+  "leaveGroupDialog": {
+    "confirmTitle": "Bạn có chắc chắn không?",
+    "confirmDescription": "Bạn sắp rời khỏi nhóm \"{groupName}\". Bạn sẽ không thể xem tin nhắn hoặc tham gia vào nhóm này nữa. Hành động này không thể hoàn tác.",
+    "cancelButton": "Hủy",
+    "leaveButton": "Rời khỏi nhóm"
+  },
+  "messageInput": {
+    "placeholder": "Nhập tin nhắn...",
+    "uploadFile": "Tải tệp lên"
+  },
+  "message": {
+    "you": "Bạn",
+    "sending": "đang gửi...",
+    "downloadFile": "Tải tệp"
+  },
+  "welcome": {
+    "title": "Chào mừng đến với groupchat",
+    "description": "Chọn một nhóm từ thanh bên để bắt đầu trò chuyện,\nhoặc tạo một nhóm mới để bắt đầu."
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "accountTitle": "Tài khoản",
+    "accountDescription": "Đây là thông tin hồ sơ công khai của bạn.",
+    "logoutButton": "Đăng xuất",
+    "appearanceTitle": "Giao diện",
+    "appearanceDescription": "Tùy chỉnh giao diện của ứng dụng.",
+    "themeMode": "Chế độ giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Hệ thống",
+    "languageTitle": "Ngôn ngữ",
+    "languageDescription": "Chọn ngôn ngữ ưa thích của bạn.",
+    "languageLabel": "Ngôn ngữ",
+    "notificationsTitle": "Thông báo",
+    "notificationsDescription": "Quản lý cách bạn nhận thông báo.",
+    "notificationsToggle": "Nhận thông báo khi có tin nhắn mới",
+    "notificationsUnsupported": "Thông báo không được hỗ trợ trên trình duyệt hoặc thiết bị này."
+  },
+  "toasts": {
+    "fillFields": "Vui lòng điền vào tất cả các trường.",
+    "passwordsNoMatch": "Mật khẩu không khớp.",
+    "loginFailed": "Đăng nhập thất bại",
+    "signUpFailed": "Đăng ký thất bại",
+    "adminLeaveError": "Quản trị viên không thể rời khỏi nhóm. Vui lòng chuyển quyền sở hữu cho thành viên khác trước.",
+    "groupLeftSuccess": "Bạn đã rời khỏi nhóm: {groupName}",
+    "leaveGroupError": "Không thể rời khỏi nhóm.",
+    "userNotFound": "Không tìm thấy người dùng.",
+    "userAlreadyInGroup": "Người dùng đã ở trong nhóm.",
+    "memberAdded": "{displayName} đã được thêm vào nhóm.",
+    "addMemberError": "Không thể thêm thành viên.",
+    "removeMemberError": "Không thể xóa thành viên.",
+    "cannotRemoveAdmin": "Không thể xóa quản trị viên nhóm.",
+    "memberRemoved": "Đã xóa thành viên khỏi nhóm.",
+    "messageSendError": "Không thể gửi tin nhắn.",
+    "fileTooLarge": "Tệp quá lớn",
+    "fileTooLargeDesc": "Vui lòng tải lên các tệp nhỏ hơn 20MB.",
+    "uploadFailed": "Tải lên thất bại",
+    "fileSendError": "Không thể gửi tệp.",
+    "processFileError": "Không thể xử lý tệp.",
+    "fetchGroupsError": "Không thể tìm nạp các nhóm của bạn.",
+    "groupIdCopied": "ID nhóm đã được sao chép vào khay nhớ tạm.",
+    "groupCreateError": "Không thể tạo nhóm. Vui lòng thử lại.",
+    "groupNotFound": "Không có nhóm nào tồn tại với ID đó.",
+    "alreadyMember": "Bạn đã là thành viên của nhóm này.",
+    "joinSuccess": "Bạn đã tham gia nhóm: {groupName}",
+    "joinError": "Không thể tham gia nhóm. Vui lòng thử lại.",
+    "notificationsNotSupported": "Thông báo đẩy không được hỗ trợ trên trình duyệt này.",
+    "notificationsEnabled": "Đã bật thông báo.",
+    "getNotificationTokenError": "Không thể lấy mã thông báo thông báo.",
+    "notificationPermissionDenied": "Quyền thông báo bị từ chối.",
+    "enableNotificationsError": "Không thể bật thông báo.",
+    "notificationsDisabled": "Thông báo bị vô hiệu hóa cục bộ. Lưu ý: Máy chủ vẫn có thể gửi thông báo đẩy cho đến khi mã thông báo hết hạn."
+  }
+}

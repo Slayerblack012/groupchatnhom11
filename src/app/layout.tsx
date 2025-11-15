@@ -3,6 +3,7 @@ import './globals.css';
 import {ThemeProvider} from '@/providers/theme-provider';
 import {AuthProvider} from '@/providers/auth-provider';
 import {Toaster} from '@/components/ui/toaster';
+import { LanguageProvider } from '@/providers/language-provider';
 
 export const metadata: Metadata = {
   title: 'groupchat',
@@ -29,17 +30,19 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              {children}
+              <Toaster />
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -1,0 +1,131 @@
+{
+  "login": {
+    "title": "登录",
+    "description": "输入您的凭据以访问您的帐户。",
+    "emailLabel": "电子邮件",
+    "passwordLabel": "密码",
+    "button": "登录",
+    "appName": "groupchat",
+    "appSlogan": "适合您团队的简单实时聊天应用程序。"
+  },
+  "register": {
+    "title": "注册",
+    "description": "创建一个新帐户以开始聊天。",
+    "emailLabel": "电子邮件",
+    "passwordLabel": "密码",
+    "confirmPasswordLabel": "确认密码",
+    "button": "创建帐户"
+  },
+  "sidebar": {
+    "yourGroups": "你的群组",
+    "createGroup": "创建群组",
+    "joinGroup": "加入群组",
+    "settings": "设置"
+  },
+  "createGroupDialog": {
+    "title": "创建一个新群组",
+    "description": "为您的新群组输入一个名称。您可以稍后邀请其他人。",
+    "groupNameLabel": "群组名称",
+    "groupNamePlaceholder": "例如，凤凰项目",
+    "createButton": "创建",
+    "createdTitle": "群组已创建！",
+    "createdDescription": "与他人分享此ID，让他们加入您的群组。",
+    "copyButton": "复制",
+    "doneButton": "完成"
+  },
+  "joinGroupDialog": {
+    "title": "加入现有群组",
+    "description": "输入您收到的群组ID以加入聊天。",
+    "groupIdLabel": "群组ID",
+    "groupIdPlaceholder": "在此处粘贴群组ID",
+    "joinButton": "加入"
+  },
+  "chatHeader": {
+    "members": "成员",
+    "member": "成员",
+    "manageMembers": "管理成员",
+    "leaveGroup": "离开群组"
+  },
+  "memberManagement": {
+    "title": "管理成员",
+    "description": "从'{groupName}'中添加或删除成员。",
+    "addMember": "添加成员",
+    "addMemberPlaceholder": "user@example.com",
+    "currentMembers": "当前成员",
+    "admin": "管理员",
+    "member": "成员"
+  },
+  "leaveGroupDialog": {
+    "confirmTitle": "您确定吗？",
+    "confirmDescription": "您即将离开群组“{groupName}”。您将无法再看到此群组中的消息或参与其中。此操作无法撤消。",
+    "cancelButton": "取消",
+    "leaveButton": "离开群组"
+  },
+  "messageInput": {
+    "placeholder": "输入消息...",
+    "uploadFile": "上传文件"
+  },
+  "message": {
+    "you": "你",
+    "sending": "发送中...",
+    "downloadFile": "下载文件"
+  },
+  "welcome": {
+    "title": "欢迎来到groupchat",
+    "description": "从侧边栏选择一个群组开始聊天，\n或创建一个新群组开始。"
+  },
+  "settings": {
+    "title": "设置",
+    "accountTitle": "帐户",
+    "accountDescription": "这是您的公开个人资料信息。",
+    "logoutButton": "登出",
+    "appearanceTitle": "外观",
+    "appearanceDescription": "自定义应用程序的外观。",
+    "themeMode": "主题模式",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统",
+    "languageTitle": "语言",
+    "languageDescription": "选择您的首选语言。",
+    "languageLabel": "语言",
+    "notificationsTitle": "通知",
+    "notificationsDescription": "管理您接收通知的方式。",
+    "notificationsToggle": "有新消息时通知我",
+    "notificationsUnsupported": "此浏览器或设备不支持通知。"
+  },
+  "toasts": {
+    "fillFields": "请填写所有字段。",
+    "passwordsNoMatch": "密码不匹配。",
+    "loginFailed": "登录失败",
+    "signUpFailed": "注册失败",
+    "adminLeaveError": "管理员不能离开群组。请先将所有权转让给另一位成员。",
+    "groupLeftSuccess": "您已离开群组：{groupName}",
+    "leaveGroupError": "离开群组失败。",
+    "userNotFound": "未找到用户。",
+    "userAlreadyInGroup": "用户已在群组中。",
+    "memberAdded": "{displayName} 已添加到群组。",
+    "addMemberError": "添加成员失败。",
+    "removeMemberError": "删除成员失败。",
+    "cannotRemoveAdmin": "无法删除群组管理员。",
+    "memberRemoved": "已从群组中删除成员。",
+    "messageSendError": "发送消息失败。",
+    "fileTooLarge": "文件太大",
+    "fileTooLargeDesc": "请上传小于20MB的文件。",
+    "uploadFailed": "上传失败",
+    "fileSendError": "发送文件失败。",
+    "processFileError": "无法处理文件。",
+    "fetchGroupsError": "无法获取您的群组。",
+    "groupIdCopied": "群组ID已复制到剪贴板。",
+    "groupCreateError": "创建群组失败。请重试。",
+    "groupNotFound": "不存在具有该ID的群组。",
+    "alreadyMember": "您已经是该群组的成员。",
+    "joinSuccess": "您已加入群组：{groupName}",
+    "joinError": "加入群组失败。请重试。",
+    "notificationsNotSupported": "此浏览器不支持推送通知。",
+    "notificationsEnabled": "通知已启用。",
+    "getNotificationTokenError": "无法获取通知令牌。",
+    "notificationPermissionDenied": "通知权限被拒绝。",
+    "enableNotificationsError": "启用通知失败。",
+    "notificationsDisabled": "通知已在本地禁用。注意：服务器可能仍会发送推送，直到令牌过期。"
+  }
+}

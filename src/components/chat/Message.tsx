@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
 import { File } from "lucide-react";
+import { useLanguage } from "@/providers/language-provider";
 
 interface MessageProps {
   message: MessageType;
@@ -14,6 +15,7 @@ interface MessageProps {
 }
 
 export default function Message({ message, currentUserId }: MessageProps) {
+  const { t } = useLanguage();
   const isCurrentUser = message.senderId === currentUserId;
 
   return (
@@ -62,19 +64,19 @@ export default function Message({ message, currentUserId }: MessageProps) {
                 className="mt-2 flex items-center gap-2 text-sm font-medium text-blue-500 hover:underline"
               >
                 <File className="h-4 w-4" />
-                <span>{message.fileName || "Download File"}</span>
+                <span>{message.fileName || t('message.downloadFile')}</span>
               </a>
             )}
           </CardContent>
         </Card>
         <div className="text-xs text-muted-foreground">
           <span className="font-medium">
-            {isCurrentUser ? "You" : message.senderName}
+            {isCurrentUser ? t('message.you') : message.senderName}
           </span>
           {" · "}
           {message.createdAt
             ? format(message.createdAt.toDate(), "p")
-            : "sending..."}
+            : t('message.sending')}
         </div>
       </div>
     </div>

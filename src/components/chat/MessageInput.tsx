@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { compressImage } from "@/lib/image-compression";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { useLanguage } from "@/providers/language-provider";
 
 export default function MessageInput({ groupId }: { groupId: string }) {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to send message.",
+        description: t('toasts.messageSendError'),
       });
     });
 
@@ -70,8 +72,8 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     if (file.size > 20 * 1024 * 1024) { // 20MB limit
       toast({
         variant: "destructive",
-        title: "File too large",
-        description: "Please upload files smaller than 20MB.",
+        title: t('toasts.fileTooLarge'),
+        description: t('toasts.fileTooLargeDesc'),
       });
       return;
     }
@@ -94,7 +96,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         },
         (error) => {
           console.error("Upload failed:", error);
-          toast({ variant: "destructive", title: "Upload Failed" });
+          toast({ variant: "destructive", title: t('toasts.uploadFailed') });
           setUploading(false);
         },
         async () => {
@@ -120,7 +122,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
              toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to send file.",
+                description: t('toasts.fileSendError'),
             });
           });
           setUploading(false);
@@ -128,7 +130,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       );
     } catch (error) {
       console.error("Error processing file:", error);
-      toast({ variant: "destructive", title: "Error", description: "Could not process file." });
+      toast({ variant: "destructive", title: "Error", description: t('toasts.processFileError') });
       setUploading(false);
     }
 
@@ -152,6 +154,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           disabled={uploading}
         >
           <Paperclip className="h-5 w-5" />
+          <span className='sr-only'>{t('messageInput.uploadFile')}</span>
         </Button>
         <Input
           ref={fileInputRef}
@@ -161,7 +164,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         />
         <Input
           type="text"
-          placeholder="Type a message..."
+          placeholder={t('messageInput.placeholder')}
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="flex-1"

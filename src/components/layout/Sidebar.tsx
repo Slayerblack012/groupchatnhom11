@@ -33,7 +33,6 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import {
   LogOut,
   Plus,
@@ -44,6 +43,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/providers/language-provider";
 
 export default function Sidebar({
   onSelectGroup,
@@ -58,6 +58,7 @@ export default function Sidebar({
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!user) return;
@@ -82,14 +83,14 @@ export default function Sidebar({
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Could not fetch your groups.",
+          description: t('toasts.fetchGroupsError'),
         });
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [user, toast]);
+  }, [user, toast, t]);
 
   return (
     <aside className="flex h-full w-full max-w-xs flex-col border-r bg-card/50">
@@ -107,7 +108,7 @@ export default function Sidebar({
 
       <ScrollArea className="flex-1 px-2">
         <div className="p-2 text-xs font-semibold text-muted-foreground">
-          YOUR GROUPS
+          {t('sidebar.yourGroups')}
         </div>
         {loading ? (
           <div className="space-y-2 p-2">
@@ -148,10 +149,10 @@ export default function Sidebar({
             <span className="text-sm font-medium">{user?.displayName}</span>
           </div>
           <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={onSelectSettings}>
+            <Button variant="ghost" size="icon" onClick={onSelectSettings} aria-label={t('sidebar.settings')}>
               <Settings className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={signOut}>
+            <Button variant="ghost" size="icon" onClick={signOut} aria-label={t('settings.logoutButton')}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -164,6 +165,7 @@ export default function Sidebar({
 function CreateGroupDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [groupName, setGroupName] = useState("");
   const [open, setOpen] = useState(false);
   const [createdGroupId, setCreatedGroupId] = useState<string | null>(null);
@@ -184,7 +186,7 @@ function CreateGroupDialog() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create group. Please try again.",
+        description: t('toasts.groupCreateError'),
       });
     }
   };
@@ -193,8 +195,8 @@ function CreateGroupDialog() {
     if (!createdGroupId) return;
     navigator.clipboard.writeText(createdGroupId);
     toast({
-      title: "Copied!",
-      description: "Group ID copied to clipboard.",
+      title: t('toasts.groupIdCopied'),
+      description: t('toasts.groupIdCopied'),
     });
   };
 
@@ -213,50 +215,50 @@ function CreateGroupDialog() {
     }}>
       <DialogTrigger asChild>
         <Button className="w-full">
-          <Plus className="mr-2 h-4 w-4" /> Create Group
+          <Plus className="mr-2 h-4 w-4" /> {t('sidebar.createGroup')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         {!createdGroupId ? (
           <>
             <DialogHeader>
-              <DialogTitle>Create a new group</DialogTitle>
+              <DialogTitle>{t('createGroupDialog.title')}</DialogTitle>
               <DialogDescription>
-                Enter a name for your new group. You can invite others later.
+                {t('createGroupDialog.description')}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="group-name" className="text-right">
-                  Group Name
+                  {t('createGroupDialog.groupNameLabel')}
                 </Label>
                 <Input
                   id="group-name"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   className="col-span-3"
-                  placeholder="e.g., Project Phoenix"
+                  placeholder={t('createGroupDialog.groupNamePlaceholder')}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button onClick={handleCreateGroup} disabled={!groupName.trim()}>
-                Create
+                {t('createGroupDialog.createButton')}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Group Created!</DialogTitle>
+              <DialogTitle>{t('createGroupDialog.createdTitle')}</DialogTitle>
               <DialogDescription>
-                Share this ID with others to let them join your group.
+                {t('createGroupDialog.createdDescription')}
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center space-x-2 pt-4">
               <div className="grid flex-1 gap-2">
                 <Label htmlFor="link" className="sr-only">
-                  Group ID
+                  {t('joinGroupDialog.groupIdLabel')}
                 </Label>
                 <Input id="link" value={createdGroupId} readOnly />
               </div>
@@ -266,12 +268,12 @@ function CreateGroupDialog() {
                 className="px-3"
                 onClick={copyToClipboard}
               >
-                <span className="sr-only">Copy</span>
+                <span className="sr-only">{t('createGroupDialog.copyButton')}</span>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
             <DialogFooter>
-              <Button onClick={closeAndReset}>Done</Button>
+              <Button onClick={closeAndReset}>{t('createGroupDialog.doneButton')}</Button>
             </DialogFooter>
           </>
         )}
@@ -283,6 +285,7 @@ function CreateGroupDialog() {
 function JoinGroupDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [groupId, setGroupId] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -296,7 +299,7 @@ function JoinGroupDialog() {
         toast({
           variant: "destructive",
           title: "Not Found",
-          description: "No group exists with that ID.",
+          description: t('toasts.groupNotFound'),
         });
         return;
       }
@@ -304,7 +307,7 @@ function JoinGroupDialog() {
       const groupData = groupSnap.data() as Group;
       if (groupData.members.includes(user.uid)) {
         toast({
-            description: "You are already a member of this group.",
+            description: t('toasts.alreadyMember'),
         });
         setOpen(false);
         setGroupId("");
@@ -317,7 +320,7 @@ function JoinGroupDialog() {
 
       toast({
         title: "Success!",
-        description: `You have joined the group: ${groupSnap.data().name}`,
+        description: t('toasts.joinSuccess', { groupName: groupSnap.data().name }),
       });
       setOpen(false);
       setGroupId("");
@@ -326,7 +329,7 @@ function JoinGroupDialog() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to join group. Please try again.",
+        description: t('toasts.joinError'),
       });
     }
   };
@@ -334,33 +337,33 @@ function JoinGroupDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full">
-          <LogIn className="mr-2 h-4 w-4" /> Join Group
+          <LogIn className="mr-2 h-4 w-4" /> {t('sidebar.joinGroup')}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Join an existing group</DialogTitle>
+          <DialogTitle>{t('joinGroupDialog.title')}</DialogTitle>
           <DialogDescription>
-            Enter the Group ID you received to join the chat.
+            {t('joinGroupDialog.description')}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="group-id" className="text-right">
-              Group ID
+              {t('joinGroupDialog.groupIdLabel')}
             </Label>
             <Input
               id="group-id"
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
               className="col-span-3"
-              placeholder="Paste Group ID here"
+              placeholder={t('joinGroupDialog.groupIdPlaceholder')}
             />
           </div>
         </div>
         <DialogFooter>
           <Button onClick={handleJoinGroup} disabled={!groupId.trim()}>
-            Join
+            {t('joinGroupDialog.joinButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -371,6 +374,7 @@ function JoinGroupDialog() {
 function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) {
     const { user } = useAuth();
     const { toast } = useToast();
+    const { t } = useLanguage();
     const [open, setOpen] = useState(false);
 
     const handleLeaveGroup = async () => {
@@ -379,7 +383,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
         if (user.uid === group.admin) {
             toast({
                 variant: "destructive",
-                description: "Admins cannot leave the group. Please transfer ownership first.",
+                description: t('toasts.adminLeaveError'),
             });
             return;
         }
@@ -391,7 +395,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             });
             toast({
                 title: "Success",
-                description: `You have left the group: ${group.name}`,
+                description: t('toasts.groupLeftSuccess', { groupName: group.name }),
             });
             onLeave();
             setOpen(false);
@@ -400,7 +404,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: "Failed to leave group.",
+                description: t('toasts.leaveGroupError'),
             });
         }
     };
@@ -409,19 +413,19 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="destructive" className="w-full justify-start">
-                    <LogOut className="mr-2 h-4 w-4" /> Leave Group
+                    <LogOut className="mr-2 h-4 w-4" /> {t('leaveGroupDialog.leaveButton')}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Are you sure?</DialogTitle>
+                    <DialogTitle>{t('leaveGroupDialog.confirmTitle')}</DialogTitle>
                     <DialogDescription>
-                        You are about to leave the group "{group.name}". You will no longer be able to see messages or participate in this group.
+                        {t('leaveGroupDialog.confirmDescription', { groupName: group.name })}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleLeaveGroup}>Leave</Button>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>{t('leaveGroupDialog.cancelButton')}</Button>
+                    <Button variant="destructive" onClick={handleLeaveGroup}>{t('leaveGroupDialog.leaveButton')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -27,9 +27,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Settings, Trash, UserX } from "lucide-react";
+import { Plus, Settings, UserX } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
+import { useLanguage } from "@/providers/language-provider";
 
 interface MemberManagementSheetProps {
   group: Group;
@@ -41,6 +42,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -69,13 +71,13 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        toast({ variant: "destructive", description: "User not found." });
+        toast({ variant: "destructive", description: t('toasts.userNotFound') });
         return;
       }
 
       const userToAdd = querySnapshot.docs[0].data() as UserProfile;
       if (group.members.includes(userToAdd.uid)) {
-        toast({ description: "User is already in the group." });
+        toast({ description: t('toasts.userAlreadyInGroup') });
         return;
       }
       
@@ -86,16 +88,16 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
 
       setMembers(prev => [...prev, userToAdd]);
       setNewMemberEmail("");
-      toast({ title: "Success", description: `${userToAdd.displayName} added to the group.` });
+      toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName }) });
     } catch (error) {
       console.error("Error adding member:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to add member." });
+      toast({ variant: "destructive", title: "Error", description: t('toasts.addMemberError') });
     }
   };
 
   const handleRemoveMember = async (memberId: string) => {
     if (memberId === group.admin) {
-        toast({ variant: "destructive", description: "Cannot remove the group admin." });
+        toast({ variant: "destructive", description: t('toasts.cannotRemoveAdmin') });
         return;
     }
 
@@ -106,11 +108,11 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
         });
 
         setMembers(prev => prev.filter(m => m.uid !== memberId));
-        toast({ title: "Success", description: "Member removed from the group." });
+        toast({ title: "Success", description: t('toasts.memberRemoved') });
 
     } catch (error) {
         console.error("Error removing member:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to remove member." });
+        toast({ variant: "destructive", title: "Error", description: t('toasts.removeMemberError') });
     }
   };
 
@@ -119,22 +121,22 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
-          <span className="sr-only">Manage Members</span>
+          <span className="sr-only">{t('chatHeader.manageMembers')}</span>
         </Button>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Manage Members</SheetTitle>
+          <SheetTitle>{t('memberManagement.title')}</SheetTitle>
           <SheetDescription>
-            Add or remove members from '{group.name}'.
+            {t('memberManagement.description', { groupName: group.name })}
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
-          <h3 className="mb-2 text-sm font-semibold">Add Member</h3>
+          <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.addMember')}</h3>
           <div className="flex gap-2">
             <Input
               type="email"
-              placeholder="user@example.com"
+              placeholder={t('memberManagement.addMemberPlaceholder')}
               value={newMemberEmail}
               onChange={(e) => setNewMemberEmail(e.target.value)}
             />
@@ -144,7 +146,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
           </div>
         </div>
         <div className="py-4">
-          <h3 className="mb-2 text-sm font-semibold">Current Members</h3>
+          <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.currentMembers')}</h3>
           <ScrollArea className="h-96">
             <div className="space-y-2">
               {loadingMembers ? (
@@ -159,7 +161,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
                       </Avatar>
                       <div>
                         <p className="text-sm font-medium">{member.displayName}</p>
-                        <p className="text-xs text-muted-foreground">{member.uid === group.admin ? "Admin" : "Member"}</p>
+                        <p className="text-xs text-muted-foreground">{member.uid === group.admin ? t('memberManagement.admin') : t('memberManagement.member')}</p>
                       </div>
                     </div>
                     {adminUser?.uid === group.admin && member.uid !== group.admin && (

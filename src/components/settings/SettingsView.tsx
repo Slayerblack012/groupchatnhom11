@@ -16,16 +16,25 @@ import { Switch } from '@/components/ui/switch';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
 import { useState, useEffect } from 'react';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import { app } from '@/lib/firebase/config';
 import { Skeleton } from '../ui/skeleton';
+import { useLanguage } from '@/providers/language-provider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function SettingsView() {
   const { user, signOut, loading } = useAuth();
   const { toast } = useToast();
+  const { t, language, setLanguage } = useLanguage();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isNotificationsSupported, setIsNotificationsSupported] = useState(false);
 
@@ -42,7 +51,7 @@ export default function SettingsView() {
     if (!user || !isNotificationsSupported) {
         toast({
             variant: "destructive",
-            description: "Push notifications are not supported on this browser."
+            description: t('toasts.notificationsNotSupported')
         });
         return;
     }
@@ -59,22 +68,20 @@ export default function SettingsView() {
               fcmTokens: arrayUnion(currentToken),
             });
             setNotificationsEnabled(true);
-            toast({ description: 'Notifications enabled.' });
+            toast({ description: t('toasts.notificationsEnabled') });
           } else {
-             toast({ variant: "destructive", description: 'Could not get notification token.' });
+             toast({ variant: "destructive", description: t('toasts.getNotificationTokenError') });
           }
         } else {
-            toast({ variant: "destructive", description: 'Notification permission denied.' });
+            toast({ variant: "destructive", description: t('toasts.notificationPermissionDenied') });
         }
       } catch (error) {
         console.error('Error enabling notifications:', error);
-        toast({ variant: "destructive", description: 'Failed to enable notifications.' });
+        toast({ variant: "destructive", description: t('toasts.enableNotificationsError') });
       }
     } else {
-       // Note: Disabling notifications client-side. For a full solution, you'd manage tokens server-side.
-       // This UX simply stops the client from asking for more messages.
        setNotificationsEnabled(false);
-       toast({ description: 'Notifications disabled locally. Note: Server may still send pushes until token expires.' });
+       toast({ description: t('toasts.notificationsDisabled') });
     }
   };
   
@@ -85,7 +92,7 @@ export default function SettingsView() {
   if (!user) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p>Please log in to see your settings.</p>
+        <p>{t('login.description')}</p>
       </div>
     );
   }
@@ -94,13 +101,13 @@ export default function SettingsView() {
   return (
     <div className="flex-1 p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-6 text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="mb-6 text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Account</CardTitle>
+            <CardTitle>{t('settings.accountTitle')}</CardTitle>
             <CardDescription>
-              This is your public profile information.
+              {t('settings.accountDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -118,37 +125,60 @@ export default function SettingsView() {
             </div>
             <Separator className="my-6" />
             <Button variant="destructive" onClick={signOut}>
-              Log Out
+              {t('settings.logoutButton')}
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Appearance</CardTitle>
+            <CardTitle>{t('settings.appearanceTitle')}</CardTitle>
             <CardDescription>
-              Customize the look and feel of the app.
+              {t('settings.appearanceDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
-              <Label htmlFor="theme-mode">Theme Mode</Label>
+              <Label htmlFor="theme-mode">{t('settings.themeMode')}</Label>
               <ThemeToggle />
             </div>
           </CardContent>
         </Card>
 
+        <Card className="mb-8">
+            <CardHeader>
+                <CardTitle>{t('settings.languageTitle')}</CardTitle>
+                <CardDescription>{t('settings.languageDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="language-select">{t('settings.languageLabel')}</Label>
+                    <Select value={language} onValueChange={(value) => setLanguage(value as 'en' | 'vi' | 'zh')}>
+                        <SelectTrigger className="w-[180px]" id="language-select">
+                            <SelectValue placeholder={t('settings.languageLabel')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="vi">Tiếng Việt</SelectItem>
+                            <SelectItem value="zh">中文</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </CardContent>
+        </Card>
+
+
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
+            <CardTitle>{t('settings.notificationsTitle')}</CardTitle>
             <CardDescription>
-              Manage how you receive notifications.
+              {t('settings.notificationsDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <Label htmlFor="notifications-toggle">
-                Get notified for new messages
+                {t('settings.notificationsToggle')}
               </Label>
               <Switch
                 id="notifications-toggle"
@@ -157,7 +187,7 @@ export default function SettingsView() {
                 disabled={!isNotificationsSupported}
               />
             </div>
-            {!isNotificationsSupported && <p className='text-xs text-muted-foreground mt-2'>Notifications are not supported on this browser or device.</p>}
+            {!isNotificationsSupported && <p className='text-xs text-muted-foreground mt-2'>{t('settings.notificationsUnsupported')}</p>}
           </CardContent>
         </Card>
       </div>
