@@ -1,0 +1,29 @@
+import type { Timestamp } from "firebase/firestore";
+
+export interface UserProfile {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  fcmTokens?: string[];
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  admin: string;
+  members: string[];
+  createdAt: Timestamp;
+}
+
+export interface Message {
+  id: string;
+  text?: string;
+  imageUrl?: string;
+  fileUrl?: string;
+  fileName?: string;
+  senderId: string;
+  senderName: string;
+  senderPhotoURL: string;
+  createdAt: Timestamp;
+}
