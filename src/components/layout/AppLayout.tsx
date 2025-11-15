@@ -46,7 +46,7 @@ export default function AppLayout() {
         selectedGroupId={selectedGroupId}
         onSelectSettings={handleSelectSettings} 
       />
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col bg-card">
         {renderContent()}
       </main>
     </div>
