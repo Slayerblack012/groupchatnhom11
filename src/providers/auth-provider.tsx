@@ -2,15 +2,20 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
-import { GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut 
+} from "firebase/auth";
+import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import type { UserProfile } from "@/types";
 
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, pass: string) => Promise<any>;
+  signUpWithEmail: (email: string, pass: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -25,18 +30,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (firebaseUser) {
         const userRef = doc(db, "users", firebaseUser.uid);
         const docSnap = await getDoc(userRef);
-        if (!docSnap.exists()) {
-          // Create user profile if it doesn't exist
-          const newUserProfile: UserProfile = {
+        if (docSnap.exists()) {
+          setUser(docSnap.data() as UserProfile);
+        } else {
+          // This case might happen if user is created but profile creation fails.
+          // Let's create it now.
+           const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName,
+            displayName: firebaseUser.displayName || firebaseUser.email,
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL,
           };
           await setDoc(userRef, newUserProfile);
           setUser(newUserProfile);
-        } else {
-          setUser(docSnap.data() as UserProfile);
         }
       } else {
         setUser(null);
@@ -47,13 +53,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-    }
+  const signInWithEmail = async (email: string, pass: string) => {
+    return signInWithEmailAndPassword(auth, email, pass);
+  };
+  
+  const signUpWithEmail = async (email: string, pass: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const firebaseUser = userCredential.user;
+    
+    // Create user profile
+    const newUserProfile: UserProfile = {
+      uid: firebaseUser.uid,
+      displayName: firebaseUser.displayName || email, // Use email as fallback
+      email: firebaseUser.email,
+      photoURL: firebaseUser.photoURL,
+    };
+    const userRef = doc(db, "users", firebaseUser.uid);
+    await setDoc(userRef, newUserProfile);
+
+    // This is handled by onAuthStateChanged but we can set it here to speed up UI
+    setUser(newUserProfile); 
+    
+    return userCredential;
   };
 
   const signOut = async () => {
@@ -64,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = { user, loading, signInWithGoogle, signOut };
+  const value = { user, loading, signInWithEmail, signUpWithEmail, signOut };
 
   return (
     <AuthContext.Provider value={value}>

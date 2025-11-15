@@ -1,25 +1,64 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSquare } from "lucide-react";
-
-const GoogleIcon = () => (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
-        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6.02c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6.02c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-        <path fill="none" d="M0 0h48v48H0z"></path>
-    </svg>
-);
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
+  const { toast } = useToast();
+
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+        toast({ variant: "destructive", description: "Please fill in all fields." });
+        return;
+    }
+    try {
+      await signInWithEmail(loginEmail, loginPassword);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Login Failed", description: error.message });
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signUpEmail || !signUpPassword || !signUpConfirmPassword) {
+        toast({ variant: "destructive", description: "Please fill in all fields." });
+        return;
+    }
+    if (signUpPassword !== signUpConfirmPassword) {
+        toast({ variant: "destructive", description: "Passwords do not match." });
+        return;
+    }
+    try {
+      await signUpWithEmail(signUpEmail, signUpPassword);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Sign Up Failed", description: error.message });
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md text-center">
         <div className="mb-8 flex items-center justify-center">
           <MessageSquare className="h-12 w-12 text-primary" />
           <h1 className="ml-4 font-headline text-5xl font-bold text-foreground">
@@ -29,16 +68,71 @@ export default function Login() {
         <p className="mb-10 text-lg text-muted-foreground">
           The simple, real-time chat app for your team.
         </p>
-        <div className="flex flex-col items-center">
-            <Button onClick={signInWithGoogle} size="lg" className="w-full max-w-xs shadow-md">
-                <GoogleIcon />
-                Sign in with Google
-            </Button>
-            <p className="mt-4 text-xs text-muted-foreground">
-                By signing in, you agree to not be evil.
-            </p>
-        </div>
-      </div>
+
+      <Tabs defaultValue="login" className="w-full max-w-sm">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="register">Register</TabsTrigger>
+        </TabsList>
+        <TabsContent value="login">
+          <Card>
+            <CardHeader>
+              <CardTitle>Login</CardTitle>
+              <CardDescription>
+                Enter your credentials to access your account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin}>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input id="login-email" type="email" placeholder="m@example.com" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="login-password">Password</Label>
+                        <Input id="login-password" type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" className="w-full">
+                        Login
+                    </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="register">
+          <Card>
+            <CardHeader>
+              <CardTitle>Register</CardTitle>
+              <CardDescription>
+                Create a new account to start chatting.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+             <form onSubmit={handleSignUp}>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="signup-email">Email</Label>
+                        <Input id="signup-email" type="email" placeholder="m@example.com" required value={signUpEmail} onChange={(e) => setSignUpEmail(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="signup-password">Password</Label>
+                        <Input id="signup-password" type="password" required value={signUpPassword} onChange={(e) => setSignUpPassword(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                        <Input id="confirm-password" type="password" required value={signUpConfirmPassword} onChange={(e) => setSignUpConfirmPassword(e.target.value)} />
+                    </div>
+                    <Button type="submit" className="w-full">
+                        Create Account
+                    </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
