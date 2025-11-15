@@ -37,13 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
+             // This case happens for users that just signed up
+             // The user profile is created in signUpWithEmail, but we might reach here
+             // before the write is complete. Let's create it if it doesn't exist.
              const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || firebaseUser.email,
               email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
             };
-            // Use setDoc and catch potential permission errors
+            
             setDoc(userRef, newUserProfile, { merge: false })
               .then(() => {
                 setUser(newUserProfile);

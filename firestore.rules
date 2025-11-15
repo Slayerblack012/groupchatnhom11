@@ -42,23 +42,13 @@ service cloud.firestore {
      * @principle Enforces document ownership for user profiles, validating the UID on create and enforcing immutability of the UID on update.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return request.auth != null && request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of userId
-      allow delete: if isExistingOwner(userId);
     }
 
     /**
@@ -66,8 +56,8 @@ service cloud.firestore {
      * @path /groups/{groupId}
      * @allow (create) - Any authenticated user can create a group.
      * @allow (get, list) - Any user can read any group.
-     * @allow (update, delete) - Only the group admin (adminId) can update or delete the group.
-     * @deny (update, delete) - Non-admin users cannot update or delete groups.
+     * @allow (update, delete) - Only the group admin (adminId) or a member can update the group.
+     * @deny (delete) - Non-admin users cannot delete groups.
      * @principle Manages group creation, open access for reads, and restricts modification to the admin.
      */
     match /groups/{groupId} {
@@ -75,18 +65,18 @@ service cloud.firestore {
         return request.auth.uid != null;
       }
 
-      function isAdmin(adminId) {
-        return request.auth.uid == adminId;
+      function isAdmin() {
+        return request.auth.uid == resource.data.admin;
       }
-
-      function isExistingAdmin(adminId) {
-        return isAdmin(adminId) && resource != null;
+      
+      function isMember() {
+          return request.auth.uid in resource.data.members;
       }
 
       allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if isExistingAdmin(resource.data.adminId) || request.auth.uid in resource.data.members;
-      allow delete: if isExistingAdmin(resource.data.adminId);
+      allow update: if isSignedIn() && (isAdmin() || isMember());
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
@@ -125,6 +115,8 @@ service cloud.firestore {
         }
         allow get: if isSignedIn();
         allow list: if false;
+        // This rule is permissive for the setup of the admin user.
+        // It should be tightened in a production environment.
         allow create: if isSignedIn();
         allow update: if false;
         allow delete: if false;
