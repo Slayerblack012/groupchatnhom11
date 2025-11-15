@@ -19,6 +19,8 @@ import { Paperclip, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { compressImage } from "@/lib/image-compression";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 export default function MessageInput({ groupId }: { groupId: string }) {
   const { user } = useAuth();
@@ -32,23 +34,32 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     e.preventDefault();
     if (!text.trim() || !user) return;
 
-    try {
-      await addDoc(collection(db, "groups", groupId, "messages"), {
-        text,
-        senderId: user.uid,
-        senderName: user.displayName,
-        senderPhotoURL: user.photoURL,
-        createdAt: serverTimestamp(),
-      });
-      setText("");
-    } catch (error) {
+    const messagesCollection = collection(db, "groups", groupId, "messages");
+    const messageData = {
+      text,
+      groupId: groupId,
+      senderId: user.uid,
+      senderName: user.displayName,
+      senderPhotoURL: user.photoURL,
+      createdAt: serverTimestamp(),
+    };
+
+    addDoc(messagesCollection, messageData).catch((error) => {
       console.error("Error sending message:", error);
+      const permissionError = new FirestorePermissionError({
+        path: `groups/${groupId}/messages`,
+        operation: 'create',
+        requestResourceData: messageData
+      });
+      errorEmitter.emit('permission-error', permissionError);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to send message.",
       });
-    }
+    });
+
+    setText("");
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,12 +98,24 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await addDoc(collection(db, "groups", groupId, "messages"), {
+          const messagesCollection = collection(db, "groups", groupId, "messages");
+          const messageData = {
             ...(isImage ? { imageUrl: downloadURL } : { fileUrl: downloadURL, fileName: file.name }),
+            groupId: groupId,
             senderId: user.uid,
             senderName: user.displayName,
             senderPhotoURL: user.photoURL,
             createdAt: serverTimestamp(),
+          };
+
+          addDoc(messagesCollection, messageData).catch((error) => {
+            console.error("Error sending file message:", error);
+            const permissionError = new FirestorePermissionError({
+                path: `groups/${groupId}/messages`,
+                operation: 'create',
+                requestResourceData: messageData
+            });
+            errorEmitter.emit('permission-error', permissionError);
           });
           setUploading(false);
         }
