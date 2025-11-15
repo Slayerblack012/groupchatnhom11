@@ -1,3 +1,4 @@
+import React from 'react';
 import { MessageSquare } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 
