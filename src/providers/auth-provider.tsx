@@ -10,6 +10,7 @@ import {
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import type { UserProfile } from "@/types";
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -33,15 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (docSnap.exists()) {
           setUser(docSnap.data() as UserProfile);
         } else {
-          // This case might happen if user is created but profile creation fails.
-          // Let's create it now.
            const newUserProfile: UserProfile = {
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName || firebaseUser.email,
             email: firebaseUser.email,
             photoURL: firebaseUser.photoURL,
           };
-          await setDoc(userRef, newUserProfile);
+          // Using non-blocking write with contextual error handling
+          setDocumentNonBlocking(userRef, newUserProfile, { merge: false });
           setUser(newUserProfile);
         }
       } else {
@@ -69,7 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       photoURL: firebaseUser.photoURL,
     };
     const userRef = doc(db, "users", firebaseUser.uid);
-    await setDoc(userRef, newUserProfile);
+    // Use the non-blocking function which handles contextual errors
+    setDocumentNonBlocking(userRef, newUserProfile, { merge: false });
 
     // This is handled by onAuthStateChanged but we can set it here to speed up UI
     setUser(newUserProfile); 
