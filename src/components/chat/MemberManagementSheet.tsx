@@ -26,10 +26,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Settings, UserX } from "lucide-react";
+import { Plus, Settings, UserX, Copy } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
 import { useLanguage } from "@/providers/language-provider";
+import { Label } from "../ui/label";
 
 interface MemberManagementSheetProps {
   group: Group;
@@ -124,6 +125,14 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     }
   };
 
+  const copyGroupIdToClipboard = () => {
+    navigator.clipboard.writeText(group.id);
+    toast({
+      title: t('toasts.groupIdCopied'),
+      description: `ID: ${group.id}`,
+    });
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -140,6 +149,16 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
           </SheetDescription>
         </SheetHeader>
         <div className="py-4">
+            <Label className="text-sm font-semibold">{t('joinGroupDialog.groupIdLabel')}</Label>
+            <div className="flex items-center space-x-2 pt-2">
+                <Input value={group.id} readOnly />
+                <Button size="icon" variant="outline" onClick={copyGroupIdToClipboard} className="px-3">
+                    <span className="sr-only">{t('createGroupDialog.copyButton')}</span>
+                    <Copy className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+        <div className="py-4">
           <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.addMember')}</h3>
           <div className="flex gap-2">
             <Input
@@ -155,7 +174,7 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
         </div>
         <div className="py-4">
           <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.currentMembers')}</h3>
-          <ScrollArea className="h-96">
+          <ScrollArea className="h-72">
             <div className="space-y-2">
               {loadingMembers ? (
                  [...Array(3)].map((_,i) => <Skeleton key={i} className="h-12 w-full"/>)
@@ -187,4 +206,3 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     </Sheet>
   );
 }
-
