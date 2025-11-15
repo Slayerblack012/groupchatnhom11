@@ -8,7 +8,7 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  getDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Message as MessageType, Group } from "@/types";
@@ -18,12 +18,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Message from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import ChatHeader from "@/components/chat/ChatHeader";
+import TypingIndicator from "./TypingIndicator";
+
+interface TypingUser {
+  name: string;
+  uid: string;
+}
 
 export default function ChatView({ groupId, onGroupLeft }: { groupId: string, onGroupLeft: () => void; }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -57,9 +64,25 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
       setLoading(false);
     });
 
+    // Typing indicator listener
+    const typingRef = collection(db, "groups", groupId, "typing");
+    const unsubscribeTyping = onSnapshot(typingRef, (snapshot) => {
+        const now = Timestamp.now();
+        const typing: TypingUser[] = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // User is typing if their timestamp is recent (within 3 seconds)
+            if (data.timestamp && (now.seconds - data.timestamp.seconds < 3) && doc.id !== user.uid) {
+                typing.push({ uid: doc.id, name: data.name });
+            }
+        });
+        setTypingUsers(typing);
+    });
+
     return () => {
         unsubscribeGroup();
         unsubscribeMessages();
+        unsubscribeTyping();
     }
   }, [groupId, user, onGroupLeft]);
 
@@ -112,6 +135,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
       </ScrollArea>
       <div className="border-t p-4 bg-background">
         <MessageInput groupId={groupId} />
+        <TypingIndicator users={typingUsers} />
       </div>
     </div>
   );

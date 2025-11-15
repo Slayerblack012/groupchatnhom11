@@ -129,5 +129,8 @@
     "notificationPermissionDenied": "Quyền thông báo bị từ chối.",
     "enableNotificationsError": "Không thể bật thông báo.",
     "notificationsDisabled": "Thông báo bị vô hiệu hóa cục bộ. Lưu ý: Máy chủ vẫn có thể gửi thông báo đẩy cho đến khi mã thông báo hết hạn."
+  },
+  "typingIndicator": {
+    "isTyping": "{names} đang gõ..."
   }
 }

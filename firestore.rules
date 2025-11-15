@@ -11,7 +11,8 @@
  * Data Structure:
  * - /users/{userId}: Stores individual user profiles. Only the user can read/write their own profile.
  * - /groups/{groupId}: Stores group information, including admin and members.
- * - /groups/{groupId}/messages/{messageId}: Stores messages within a group, inheriting group membership from the parent document.
+ * - /groups/{groupId}/messages/{messageId}: Stores messages within a group.
+ * - /groups/{groupId}/typing/{userId}: Stores typing indicators for users in a group.
  * - /roles_admin/{userId}: Document existence signifies admin role.
  *
  * Key Security Decisions:
@@ -80,29 +81,45 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (isAdmin() || isMember());
       allow delete: if isSignedIn() && isAdmin();
-    }
 
-    /**
-     * @description Controls access to messages within a group.
-     * @path /groups/{groupId}/messages/{messageId}
-     * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
-     * @allow (get, list) - Any user can read any message in a group.
-     * @allow (update, delete) - No one can update or delete a message.
-     * @deny (update, delete) - Updating or deleting a message is always denied.
-     * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
-     */
-    match /groups/{groupId}/messages/{messageId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      function isGroupMember(groupId) {
-        return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+      /**
+       * @description Controls access to messages within a group.
+       * @path /groups/{groupId}/messages/{messageId}
+       * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
+       * @allow (get, list) - Any user can read any message in a group.
+       * @allow (update, delete) - No one can update or delete a message.
+       * @deny (update, delete) - Updating or deleting a message is always denied.
+       * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
+       */
+      match /messages/{messageId} {
+        function isGroupMember(groupId) {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+        }
+
+        allow get, list: if true;
+        allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
+        allow update: if false;
+        allow delete: if false;
       }
 
-      allow get, list: if true;
-      allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-      allow update: if false;
-      allow delete: if false;
+      /**
+       * @description Controls access to typing indicators within a group.
+       * @path /groups/{groupId}/typing/{userId}
+       * @allow (create, update, delete) - A group member can manage their own typing indicator.
+       * @allow (list, get) - Any group member can see who is typing.
+       * @principle Allows members to signal their typing status to other members of the same group.
+       */
+      match /typing/{userId} {
+        function isGroupMember(groupId) {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+        }
+        function isOwner(userId) {
+            return request.auth != null && request.auth.uid == userId;
+        }
+        
+        allow read: if isGroupMember(groupId);
+        allow write: if isGroupMember(groupId) && isOwner(userId);
+      }
     }
 
     /**

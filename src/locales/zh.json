@@ -129,5 +129,8 @@
     "notificationPermissionDenied": "通知权限被拒绝。",
     "enableNotificationsError": "启用通知失败。",
     "notificationsDisabled": "通知已在本地禁用。注意：服务器可能仍会发送推送，直到令牌过期。"
+  },
+  "typingIndicator": {
+    "isTyping": "{names} 正在输入..."
   }
 }

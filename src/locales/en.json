@@ -129,5 +129,8 @@
     "notificationPermissionDenied": "Notification permission denied.",
     "enableNotificationsError": "Failed to enable notifications.",
     "notificationsDisabled": "Notifications disabled locally. Note: Server may still send pushes until token expires."
+  },
+  "typingIndicator": {
+    "isTyping": "{names} is typing..."
   }
 }

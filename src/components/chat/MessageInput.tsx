@@ -1,11 +1,15 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   collection,
   addDoc,
   serverTimestamp,
+  doc,
+  setDoc,
+  deleteDoc,
+  Timestamp,
 } from "firebase/firestore";
 import {
   ref,
@@ -25,6 +29,30 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { useLanguage } from "@/providers/language-provider";
 import type { Message } from "@/types";
 
+// Debounce hook
+const useDebounce = (callback: () => void, delay: number) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const debouncedCallback = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback();
+    }, delay);
+  }, [callback, delay]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return debouncedCallback;
+};
+
 export default function MessageInput({ groupId }: { groupId: string }) {
   const { user } = useAuth();
   const [text, setText] = useState("");
@@ -33,10 +61,43 @@ export default function MessageInput({ groupId }: { groupId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const typingRef = useRef<boolean>(false);
+
+  const removeTypingStatus = useCallback(async () => {
+    if (user) {
+      try {
+        await deleteDoc(doc(db, "groups", groupId, "typing", user.uid));
+        typingRef.current = false;
+      } catch (error) {
+        // Handle error silently, e.g., permissions issue
+      }
+    }
+  }, [user, groupId]);
+  
+  const debouncedRemoveTyping = useDebounce(removeTypingStatus, 3000);
+
+  const updateTypingStatus = useCallback(async () => {
+    if (user) {
+      try {
+        const typingDocRef = doc(db, "groups", groupId, "typing", user.uid);
+        await setDoc(typingDocRef, {
+          name: user.displayName,
+          timestamp: Timestamp.now(),
+        });
+        typingRef.current = true;
+        debouncedRemoveTyping();
+      } catch (error) {
+        // Handle error silently
+      }
+    }
+  }, [user, groupId, debouncedRemoveTyping]);
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !user) return;
+    
+    removeTypingStatus();
 
     const messagesCollection = collection(db, "groups", groupId, "messages");
     const messageData: Omit<Message, 'id' | 'createdAt'> = {
@@ -90,7 +151,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       
       const timestamp = Date.now();
       const storageRef = ref(storage, `group_files/${groupId}/${timestamp}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+      const uploadTask = uploadBytesResumable(storageRef, fileToUpload as Blob);
 
       uploadTask.on(
         "state_changed",
@@ -146,6 +207,21 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
     if(fileInputRef.current) fileInputRef.current.value = "";
   };
+  
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const currentText = e.target.value;
+    setText(currentText);
+
+    if (currentText && !typingRef.current) {
+        updateTypingStatus();
+    } else if (!currentText && typingRef.current) {
+        removeTypingStatus();
+    } else if (currentText) {
+        // If already typing, just reset the debounce timer
+        debouncedRemoveTyping();
+    }
+  };
+
 
   return (
     <div>
@@ -171,13 +247,13 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           type="file"
           className="hidden"
           onChange={handleFileChange}
-          accept="image/*,video/*"
+          accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         />
         <Input
           type="text"
           placeholder={t('messageInput.placeholder')}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleTextChange}
           className="flex-1"
           autoComplete="off"
           disabled={uploading}
