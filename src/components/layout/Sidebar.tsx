@@ -124,14 +124,19 @@ export default function Sidebar({
                 key={group.id}
                 variant={selectedGroupId === group.id ? "secondary" : "ghost"}
                 className={cn(
-                  "justify-start",
+                  "justify-start gap-2",
                   selectedGroupId === group.id &&
                     "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
                 onClick={() => onSelectGroup(group.id)}
               >
-                <Users className="mr-2 h-4 w-4" />
-                {group.name}
+                <Avatar className="h-6 w-6">
+                    <AvatarImage src={group.photoURL} />
+                    <AvatarFallback>
+                        <Users className="h-4 w-4" />
+                    </AvatarFallback>
+                </Avatar>
+                <span className="truncate">{group.name}</span>
               </Button>
             ))}
           </nav>
@@ -435,9 +440,3 @@ function JoinGroupDialog() {
     </Dialog>
   );
 }
-    
-
-
-    
-
-    

@@ -14,6 +14,7 @@ export interface Group {
   admin: string;
   members: string[];
   createdAt: Timestamp;
+  photoURL?: string;
 }
 
 export interface Message {

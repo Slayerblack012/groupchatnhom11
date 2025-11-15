@@ -56,6 +56,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "photoURL": {
+            "type": "string",
+            "description": "URL of the group's avatar picture.",
+            "format": "uri"
         }
       },
       "required": [

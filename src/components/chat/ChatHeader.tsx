@@ -20,6 +20,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/providers/language-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 interface ChatHeaderProps {
   group: Group;
@@ -34,9 +35,12 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
   return (
     <div className="flex items-center justify-between border-b p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-          <Users className="h-5 w-5 text-muted-foreground" />
-        </div>
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={group.photoURL} />
+          <AvatarFallback>
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
         <div>
           <h2 className="text-lg font-semibold">{group.name}</h2>
           <p className="text-xs text-muted-foreground">

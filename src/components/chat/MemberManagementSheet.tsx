@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   doc,
   updateDoc,
@@ -17,7 +17,12 @@ import {
   endAt,
   orderBy,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import {
+    ref,
+    uploadBytesResumable,
+    getDownloadURL,
+} from "firebase/storage";
+import { db, storage } from "@/lib/firebase/config";
 import type { Group, UserProfile } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import {
@@ -32,7 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Settings, UserX, Copy } from "lucide-react";
+import { Plus, Settings, UserX, Copy, Camera } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
 import { useLanguage } from "@/providers/language-provider";
@@ -40,20 +45,30 @@ import { Label } from "../ui/label";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { Separator } from "../ui/separator";
+import { compressImage } from "@/lib/image-compression";
 
 interface MemberManagementSheetProps {
   group: Group;
 }
 
-export default function MemberManagementSheet({ group }: MemberManagementSheetProps) {
+export default function MemberManagementSheet({ group: initialGroup }: MemberManagementSheetProps) {
   const { user: adminUser } = useAuth();
+  const [group, setGroup] = useState(initialGroup);
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [groupName, setGroupName] = useState(group.name);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    setGroup(initialGroup);
+    setGroupName(initialGroup.name);
+  }, [initialGroup]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -173,6 +188,54 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
     });
   };
 
+  const handleGroupNameChange = async () => {
+    if (groupName.trim() === group.name || !groupName.trim()) {
+        return;
+    }
+    const groupRef = doc(db, "groups", group.id);
+    try {
+        await updateDoc(groupRef, { name: groupName.trim() });
+        toast({ title: "Success", description: "Group name updated." });
+    } catch (error) {
+        console.error("Error updating group name:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to update group name." });
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+        const compressedFile = await compressImage(file);
+        const storageRef = ref(storage, `group_avatars/${group.id}/${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+
+        uploadTask.on('state_changed', 
+            null,
+            (error) => {
+                console.error("Upload failed:", error);
+                toast({ variant: "destructive", title: t('toasts.uploadFailed') });
+                setIsUploading(false);
+            },
+            async () => {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                const groupRef = doc(db, "groups", group.id);
+                await updateDoc(groupRef, { photoURL: downloadURL });
+                setGroup(prev => ({ ...prev, photoURL: downloadURL }));
+                toast({ title: "Success", description: "Group avatar updated."});
+                setIsUploading(false);
+            }
+        );
+    } catch (error) {
+        console.error("Error handling avatar change:", error);
+        toast({ variant: "destructive", title: "Error", description: "Failed to update avatar." });
+        setIsUploading(false);
+    }
+  };
+
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -188,6 +251,32 @@ export default function MemberManagementSheet({ group }: MemberManagementSheetPr
             {t('memberManagement.description', { groupName: group.name })}
           </SheetDescription>
         </SheetHeader>
+
+        <div className="py-4 space-y-4">
+            <div className="flex items-center space-x-4">
+                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <AvatarImage src={group.photoURL} />
+                    <AvatarFallback>
+                        <Camera className="h-6 w-6"/>
+                    </AvatarFallback>
+                </Avatar>
+                <Input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    accept="image/*"
+                />
+                 <Input 
+                    value={groupName}
+                    onChange={(e) => setGroupName(e.target.value)}
+                    onBlur={handleGroupNameChange}
+                    className="text-lg font-semibold"
+                    disabled={isUploading}
+                 />
+            </div>
+        </div>
+        <Separator />
 
         <div className="py-4">
             <Label className="text-sm font-semibold">{t('joinGroupDialog.groupIdLabel')}</Label>
