@@ -61,10 +61,10 @@ export default function Message({ message, currentUserId }: MessageProps) {
                 href={message.fileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center gap-2 text-sm font-medium text-blue-500 hover:underline"
+                className="mt-2 flex items-center gap-2 rounded-lg bg-background/20 p-3 text-sm font-medium hover:bg-background/30"
               >
-                <File className="h-4 w-4" />
-                <span>{message.fileName || t('message.downloadFile')}</span>
+                <File className="h-6 w-6 flex-shrink-0" />
+                <span className="truncate">{message.fileName || t('message.downloadFile')}</span>
               </a>
             )}
           </CardContent>
