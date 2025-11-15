@@ -18,7 +18,7 @@ import Message from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 
-export default function ChatView({ groupId }: { groupId: string }) {
+export default function ChatView({ groupId, onGroupLeft }: { groupId: string, onGroupLeft: () => void; }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [group, setGroup] = useState<Group | null>(null);
@@ -26,21 +26,21 @@ export default function ChatView({ groupId }: { groupId: string }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchGroupInfo = async () => {
-      const groupRef = doc(db, "groups", groupId);
-      const docSnap = await getDoc(groupRef);
+    setLoading(true);
+    const groupRef = doc(db, "groups", groupId);
+    const unsubscribeGroup = onSnapshot(groupRef, (docSnap) => {
       if (docSnap.exists()) {
         setGroup({ id: docSnap.id, ...docSnap.data() } as Group);
+      } else {
+        setGroup(null);
+        // If group is deleted or user is removed, onGroupLeft will be called from header
       }
-    };
-    fetchGroupInfo();
-  }, [groupId]);
+    });
 
-  useEffect(() => {
     const messagesCollection = collection(db, "groups", groupId, "messages");
     const q = query(messagesCollection, orderBy("createdAt", "asc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
       const newMessages = snapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as MessageType)
       );
@@ -48,7 +48,10 @@ export default function ChatView({ groupId }: { groupId: string }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribeGroup();
+        unsubscribeMessages();
+    }
   }, [groupId]);
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function ChatView({ groupId }: { groupId: string }) {
     }
   }, [messages, loading]);
 
-  if (!user || !group) {
+  if (loading || !user || !group) {
     return (
       <div className="flex h-full flex-col">
         <div className="flex items-center p-4 border-b">
@@ -79,10 +82,16 @@ export default function ChatView({ groupId }: { groupId: string }) {
       </div>
     );
   }
+   // If user is no longer a member of the group, show a message and trigger onGroupLeft
+  if (!group.members.includes(user.uid)) {
+    onGroupLeft();
+    return null; // Or a message indicating removal
+  }
+
 
   return (
     <div className="flex h-screen flex-col">
-      <ChatHeader group={group} />
+      <ChatHeader group={group} onGroupLeft={onGroupLeft}/>
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-4 space-y-4">
             {loading ? (

@@ -12,6 +12,7 @@ import {
   updateDoc,
   arrayUnion,
   getDoc,
+  arrayRemove,
 } from "firebase/firestore";
 import { useAuth } from "@/providers/auth-provider";
 import { db } from "@/lib/firebase/config";
@@ -40,15 +41,18 @@ import {
   Copy,
   MessageSquare,
   LogIn,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar({
   onSelectGroup,
   selectedGroupId,
+  onSelectSettings,
 }: {
   onSelectGroup: (groupId: string) => void;
   selectedGroupId: string | null;
+  onSelectSettings: () => void;
 }) {
   const { user, signOut } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -144,7 +148,9 @@ export default function Sidebar({
             <span className="text-sm font-medium">{user?.displayName}</span>
           </div>
           <div className="flex items-center">
-            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={onSelectSettings}>
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>
@@ -199,7 +205,12 @@ function CreateGroupDialog() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+            closeAndReset();
+        }
+        setOpen(isOpen);
+    }}>
       <DialogTrigger asChild>
         <Button className="w-full">
           <Plus className="mr-2 h-4 w-4" /> Create Group
@@ -290,6 +301,16 @@ function JoinGroupDialog() {
         return;
       }
 
+      const groupData = groupSnap.data() as Group;
+      if (groupData.members.includes(user.uid)) {
+        toast({
+            description: "You are already a member of this group.",
+        });
+        setOpen(false);
+        setGroupId("");
+        return;
+      }
+
       await updateDoc(groupRef, {
         members: arrayUnion(user.uid),
       });
@@ -345,4 +366,64 @@ function JoinGroupDialog() {
       </DialogContent>
     </Dialog>
   );
+}
+
+function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void}) {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+
+    const handleLeaveGroup = async () => {
+        if (!user) return;
+
+        if (user.uid === group.admin) {
+            toast({
+                variant: "destructive",
+                description: "Admins cannot leave the group. Please transfer ownership first.",
+            });
+            return;
+        }
+
+        const groupRef = doc(db, "groups", group.id);
+        try {
+            await updateDoc(groupRef, {
+                members: arrayRemove(user.uid),
+            });
+            toast({
+                title: "Success",
+                description: `You have left the group: ${group.name}`,
+            });
+            onLeave();
+            setOpen(false);
+        } catch (error) {
+            console.error("Error leaving group:", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to leave group.",
+            });
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="destructive" className="w-full justify-start">
+                    <LogOut className="mr-2 h-4 w-4" /> Leave Group
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Are you sure?</DialogTitle>
+                    <DialogDescription>
+                        You are about to leave the group "{group.name}". You will no longer be able to see messages or participate in this group.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleLeaveGroup}>Leave</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }
