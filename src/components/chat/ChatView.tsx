@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -26,14 +27,22 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!user) return;
     setLoading(true);
     const groupRef = doc(db, "groups", groupId);
     const unsubscribeGroup = onSnapshot(groupRef, (docSnap) => {
       if (docSnap.exists()) {
-        setGroup({ id: docSnap.id, ...docSnap.data() } as Group);
+        const groupData = { id: docSnap.id, ...docSnap.data() } as Group;
+        // Check if user is still a member
+        if (!groupData.members.includes(user.uid)) {
+          onGroupLeft();
+          setGroup(null);
+        } else {
+          setGroup(groupData);
+        }
       } else {
         setGroup(null);
-        // If group is deleted or user is removed, onGroupLeft will be called from header
+        onGroupLeft();
       }
     });
 
@@ -52,7 +61,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
         unsubscribeGroup();
         unsubscribeMessages();
     }
-  }, [groupId]);
+  }, [groupId, user, onGroupLeft]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -82,13 +91,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
       </div>
     );
   }
-   // If user is no longer a member of the group, show a message and trigger onGroupLeft
-  if (!group.members.includes(user.uid)) {
-    onGroupLeft();
-    return null; // Or a message indicating removal
-  }
-
-
+  
   return (
     <div className="flex h-screen flex-col">
       <ChatHeader group={group} onGroupLeft={onGroupLeft}/>
