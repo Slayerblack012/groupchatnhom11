@@ -95,16 +95,8 @@ service cloud.firestore {
         function isGroupMember(groupId) {
           return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
         }
-        
-        function isMessageVisible() {
-          // Public message: visibleTo is null or does not exist
-          let isPublic = !('visibleTo' in resource.data) || resource.data.visibleTo == null;
-          // Private message: user is in the visibleTo list
-          let isRecipient = request.auth.uid in resource.data.visibleTo;
-          return isPublic || isRecipient;
-        }
 
-        allow get, list: if isGroupMember(groupId) && isMessageVisible();
+        allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
         allow update: if false;
         allow delete: if false;

@@ -8,7 +8,6 @@ admin.initializeApp();
  * TR-ID 8: Push Notifications (FCM)
  * This function triggers on new message creation in any group's message subcollection.
  * It sends a push notification to all other members of the group.
- * If the message has mentions, it sends a targeted notification.
  */
 exports.sendGroupChatNotification = functions.firestore
   .document("groups/{groupId}/messages/{messageId}")
@@ -21,31 +20,7 @@ exports.sendGroupChatNotification = functions.firestore
       return null;
     }
 
-    const { senderId, senderName, text, imageUrl, fileUrl, mentions, visibleTo } = messageData;
-    
-    // If it's a private message, only notify the recipients (visibleTo)
-    if (visibleTo && Array.isArray(visibleTo) && visibleTo.length > 0) {
-        const recipients = visibleTo.filter(id => id !== senderId);
-        if (recipients.length > 0) {
-            return sendNotification(recipients, `New private message from ${senderName}`, text || "Sent a file.", groupId);
-        }
-        return null;
-    }
-
-    // Handle mentions
-    if (mentions && Array.isArray(mentions) && mentions.length > 0) {
-        // Send a specific notification to mentioned users
-        const mentionedUserIds = [...new Set(mentions.filter(id => id !== senderId))];
-        if (mentionedUserIds.length > 0) {
-           await sendNotification(
-                mentionedUserIds, 
-                `${senderName} mentioned you`, 
-                text || "Sent a file with a mention.",
-                groupId
-            );
-        }
-    }
-
+    const { senderId, senderName, text, imageUrl, fileUrl } = messageData;
 
     try {
       // 1. Get group details to find members and group name
@@ -99,16 +74,6 @@ exports.sendGroupChatNotification = functions.firestore
     }
   });
 
-
-async function sendNotification(userIds, title, body, groupId) {
-    if (!userIds || userIds.length === 0) return;
-
-    const payload = {
-        notification: { title, body },
-        data: { groupId }
-    };
-    await sendPayloadToUsers(userIds, payload);
-}
 
 async function sendPayloadToUsers(userIds, payload) {
     const userDocsPromises = userIds.map(id => admin.firestore().collection("users").doc(id).get());

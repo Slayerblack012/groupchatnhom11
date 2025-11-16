@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
-import { File, Video, Lock } from "lucide-react";
+import { File, Video } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
@@ -19,13 +19,6 @@ interface MessageProps {
 }
 
 const renderContent = (message: MessageType, t: (key: string) => string) => {
-    const textWithMentions = message.text?.split(/(@\w+(\s\w+)*)/g).map((part, index) => {
-        if (part.startsWith('@')) {
-            return <strong key={index} className="text-blue-400">{part}</strong>;
-        }
-        return part;
-    });
-
     switch (message.contentType) {
         case 'image':
             return (
@@ -72,23 +65,13 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
             );
         case 'text':
         default:
-            return message.text ? <p className="text-sm">{textWithMentions}</p> : null;
+            return message.text ? <p className="text-sm">{message.text}</p> : null;
     }
 };
 
 export default function Message({ message, currentUserId, allMembers }: MessageProps) {
   const { t } = useLanguage();
   const isCurrentUser = message.senderId === currentUserId;
-  const isPrivate = !!message.visibleTo && message.visibleTo.length > 0;
-
-  const getVisibilityText = () => {
-    if (!isPrivate) return null;
-    const recipientNames = message.visibleTo!
-      .filter(uid => uid !== message.senderId)
-      .map(uid => allMembers[uid]?.displayName || 'Unknown')
-      .join(', ');
-    return `Private to ${recipientNames}`;
-  };
 
   return (
     <div
@@ -109,12 +92,6 @@ export default function Message({ message, currentUserId, allMembers }: MessageP
           isCurrentUser ? "items-end" : "items-start"
         )}
       >
-        {isPrivate && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            <span>{getVisibilityText()}</span>
-          </div>
-        )}
         <Card
           className={cn(
             "rounded-2xl",

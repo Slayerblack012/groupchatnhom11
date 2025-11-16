@@ -8,8 +8,6 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  Timestamp,
-  where,
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -21,6 +19,7 @@ import Message from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 import TypingIndicator from "./TypingIndicator";
+import { Timestamp } from "firebase/firestore";
 
 interface TypingUser {
   name: string;
@@ -56,39 +55,17 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
       }
     });
 
-    const publicMessagesQuery = query(
+    const messagesQuery = query(
       collection(db, "groups", groupId, "messages"),
-      where("visibleTo", "==", null),
       orderBy("createdAt", "asc")
     );
     
-    const privateMessagesQuery = query(
-      collection(db, "groups", groupId, "messages"),
-      where("visibleTo", "array-contains", user.uid),
-      orderBy("createdAt", "asc")
-    );
-
-    const processMessages = (snapshot: any, messageStore: any) => {
+    const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
         const newMessages = snapshot.docs.map(
           (doc: any) => ({ id: doc.id, ...doc.data() } as MessageType)
         );
-        newMessages.forEach((msg: any) => messageStore[msg.id] = msg);
-        
-        const allMessages = Object.values(messageStore).sort(
-            (a: any, b: any) => a.createdAt.toMillis() - b.createdAt.toMillis()
-        );
-        setMessages(allMessages as MessageType[]);
+        setMessages(newMessages);
         setLoading(false);
-    }
-    
-    const combinedMessages: {[id: string]: MessageType} = {};
-
-    const unsubscribePublic = onSnapshot(publicMessagesQuery, (snapshot) => {
-        processMessages(snapshot, combinedMessages);
-    });
-
-    const unsubscribePrivate = onSnapshot(privateMessagesQuery, (snapshot) => {
-        processMessages(snapshot, combinedMessages);
     });
 
     // Typing indicator listener
@@ -108,8 +85,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
 
     return () => {
         unsubscribeGroup();
-        unsubscribePublic();
-        unsubscribePrivate();
+        unsubscribeMessages();
         unsubscribeTyping();
     }
   }, [groupId, user, onGroupLeft]);

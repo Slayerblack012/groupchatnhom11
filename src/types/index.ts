@@ -28,6 +28,4 @@ export interface Message {
   senderName: string | null;
   senderPhotoURL: string | null;
   createdAt: Timestamp;
-  mentions?: string[]; // Array of UIDs for @mentions
-  visibleTo?: string[]; // Array of UIDs for private messages
 }
