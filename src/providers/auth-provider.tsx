@@ -38,14 +38,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (docSnap.exists()) {
             setUser(docSnap.data() as UserProfile);
           } else {
+             // This case handles users who signed up before the profile creation logic was added
              const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               displayName: firebaseUser.displayName || firebaseUser.email,
               email: firebaseUser.email,
               photoURL: firebaseUser.photoURL,
+              fcmTokens: [],
             };
             
-            setDoc(userRef, newUserProfile, { merge: false })
+            setDoc(userRef, newUserProfile, { merge: true })
               .then(() => {
                 setUser(newUserProfile);
               })
@@ -90,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       displayName: name,
       email: firebaseUser.email,
       photoURL: firebaseUser.photoURL,
+      fcmTokens: [],
     };
     const userRef = doc(db, "users", firebaseUser.uid);
     

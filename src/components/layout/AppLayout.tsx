@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -5,6 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Welcome from "@/components/chat/Welcome";
 import ChatView from "@/components/chat/ChatView";
 import SettingsView from "@/components/settings/SettingsView";
+import { Skeleton } from "../ui/skeleton";
 
 export type View = 'chat' | 'settings' | 'welcome';
 
@@ -44,13 +46,13 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-background text-foreground">
+    <div className="flex h-screen w-full text-foreground">
       <Sidebar 
         onSelectGroup={handleSelectGroup} 
         selectedGroupId={selectedGroupId}
         onSelectSettings={handleSelectSettings} 
       />
-      <main className="flex flex-1 flex-col bg-card">
+      <main className="flex flex-1 flex-col">
         {renderContent()}
       </main>
     </div>

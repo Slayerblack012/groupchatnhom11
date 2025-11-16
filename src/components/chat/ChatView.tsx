@@ -21,6 +21,7 @@ import Message from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 import TypingIndicator from "./TypingIndicator";
+import { cn } from "@/lib/utils";
 
 interface TypingUser {
   name: string;
@@ -170,12 +171,15 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
               </div>
             </div>
         </div>
+         <div className="border-t p-4">
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className={cn("flex h-screen flex-col bg-background")}>
       <ChatHeader group={group} onGroupLeft={onGroupLeft}/>
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-4 space-y-4">

@@ -24,6 +24,13 @@
           "type": "string",
           "description": "URL of the user's profile picture.",
           "format": "uri"
+        },
+        "fcmTokens": {
+          "type": "array",
+          "description": "Array of Firebase Cloud Messaging tokens for push notifications.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": [
@@ -58,9 +65,9 @@
           }
         },
         "photoURL": {
-            "type": "string",
-            "description": "URL of the group's avatar picture.",
-            "format": "uri"
+          "type": "string",
+          "description": "URL of the group's avatar picture.",
+          "format": "uri"
         }
       },
       "required": [

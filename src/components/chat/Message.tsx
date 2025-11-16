@@ -24,7 +24,6 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useAuth } from '@/providers/auth-provider';
 
 interface MessageProps {
   message: MessageType;
@@ -80,13 +79,14 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
             );
         case 'text':
         default:
-            return message.text ? <p className="text-sm">{message.text}</p> : null;
+            return message.text ? <p className="whitespace-pre-wrap text-sm">{message.text}</p> : null;
     }
 };
 
 export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
   const isCurrentUser = message.senderId === currentUserId;
+  const isGroupAdmin = currentUserId === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
   const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
   const [isEditing, setIsEditing] = useState(false);
@@ -170,7 +170,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
         </Avatar>
         <div
             className={cn(
-            "flex max-w-sm flex-col gap-1",
+            "flex max-w-[80%] flex-col gap-1 sm:max-w-sm",
             isCurrentUser ? "items-end" : "items-start"
             )}
         >
@@ -183,7 +183,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
                         : "rounded-tl-none bg-muted"
                     )}
                     >
-                    <CardContent className={cn("p-3", message.contentType === 'image' && "p-1")}>
+                    <CardContent className={cn("p-3 break-words", message.contentType === 'image' && "p-1")}>
                          {isEditing ? (
                             <div className="space-y-2">
                                 <Input 
@@ -209,7 +209,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        <DropdownMenuItem onClick={handlePinMessage}>
+                       <DropdownMenuItem onClick={handlePinMessage}>
                             <Pin className="mr-2 h-4 w-4" />
                             <span>{t('message.pin')}</span>
                         </DropdownMenuItem>
@@ -247,4 +247,3 @@ export default function Message({ message, group, currentUserId, senderProfile }
     </div>
   );
 }
-

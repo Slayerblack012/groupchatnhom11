@@ -5,7 +5,6 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 /**
- * TR-ID 8: Push Notifications (FCM)
  * This function triggers on new message creation in any group's message subcollection.
  * It sends a push notification to all other members of the group.
  */
@@ -20,7 +19,7 @@ exports.sendGroupChatNotification = functions.firestore
       return null;
     }
 
-    const { senderId, senderName, text, imageUrl, fileUrl } = messageData;
+    const { senderId, senderName, text, contentType, fileName } = messageData;
 
     try {
       // 1. Get group details to find members and group name
@@ -34,13 +33,22 @@ exports.sendGroupChatNotification = functions.firestore
       const groupName = groupData.name || "a group";
 
       // 2. Determine message content for notification
-      let messageContent = "Sent a new message";
-      if (text) {
-        messageContent = text;
-      } else if (imageUrl) {
-        messageContent = "Sent an image.";
-      } else if (fileUrl) {
-        messageContent = "Sent a file.";
+      let messageContent;
+      switch (contentType) {
+        case 'text':
+            messageContent = text;
+            break;
+        case 'image':
+            messageContent = "Sent an image.";
+            break;
+        case 'video':
+            messageContent = "Sent a video.";
+            break;
+        case 'file':
+            messageContent = `Sent a file: ${fileName || 'attachment'}`;
+            break;
+        default:
+            messageContent = "Sent a new message";
       }
 
       // Truncate long messages
@@ -76,24 +84,46 @@ exports.sendGroupChatNotification = functions.firestore
 
 
 async function sendPayloadToUsers(userIds, payload) {
-    const userDocsPromises = userIds.map(id => admin.firestore().collection("users").doc(id).get());
-    const userDocs = await Promise.all(userDocsPromises);
+    // Firestore 'in' query limit is 30
+    const userChunks = [];
+    for (let i = 0; i < userIds.length; i += 30) {
+        userChunks.push(userIds.slice(i, i + 30));
+    }
+    
+    let allTokens = [];
 
-    const tokens = userDocs.reduce((acc, userDoc) => {
-        if (userDoc.exists) {
-            const userData = userDoc.data();
-            if (userData.fcmTokens && Array.isArray(userData.fcmTokens)) {
-                return acc.concat(userData.fcmTokens);
+    for (const chunk of userChunks) {
+        const usersQuery = await admin.firestore().collection("users").where(admin.firestore.FieldPath.documentId(), 'in', chunk).get();
+        const tokensForChunk = usersQuery.docs.reduce((acc, userDoc) => {
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                if (userData.fcmTokens && Array.isArray(userData.fcmTokens)) {
+                    return acc.concat(userData.fcmTokens);
+                }
             }
-        }
-        return acc;
-    }, []);
-
-    const uniqueTokens = [...new Set(tokens)];
+            return acc;
+        }, []);
+        allTokens.push(...tokensForChunk);
+    }
+    
+    const uniqueTokens = [...new Set(allTokens)];
 
     if (uniqueTokens.length > 0) {
         console.log(`Sending notification to ${uniqueTokens.length} tokens.`);
-        await admin.messaging().sendToDevice(uniqueTokens, payload);
+        const response = await admin.messaging().sendToDevice(uniqueTokens, payload);
+        // Optional: Clean up invalid tokens
+        const tokensToRemove = [];
+        response.results.forEach((result, index) => {
+            const error = result.error;
+            if (error) {
+                console.error('Failure sending notification to', uniqueTokens[index], error);
+                if (error.code === 'messaging/invalid-registration-token' ||
+                    error.code === 'messaging/registration-token-not-registered') {
+                    tokensToRemove.push(uniqueTokens[index]);
+                }
+            }
+        });
+        // Here you could implement logic to remove `tokensToRemove` from your user documents.
     } else {
         console.log("No valid FCM tokens found for users.");
     }

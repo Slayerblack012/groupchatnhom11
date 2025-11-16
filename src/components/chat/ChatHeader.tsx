@@ -2,7 +2,7 @@
 "use client";
 
 import { useAuth } from "@/providers/auth-provider";
-import type { Group, Message } from "@/types";
+import type { Group } from "@/types";
 import { Users, LogOut, Settings, Pin, X } from "lucide-react";
 import MemberManagementSheet from "./MemberManagementSheet";
 import { Button } from "../ui/button";
@@ -22,7 +22,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/providers/language-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import ViewMembersSheet from "./ViewMembersSheet";
-import { cn } from "@/lib/utils";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 
@@ -76,8 +75,8 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+           <ViewMembersSheet group={group} />
           {isAdmin && <MemberManagementSheet group={group} />}
-          <ViewMembersSheet group={group} />
           <LeaveGroupDialog group={group} onLeave={onGroupLeft} />
         </div>
       </div>
@@ -121,9 +120,10 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
 
         const groupRef = doc(db, "groups", group.id);
         try {
-            await updateDoc(groupRef, {
+            const updateData = {
                 members: group.members.filter(id => id !== user.uid)
-            });
+            };
+            await updateDoc(groupRef, updateData);
             toast({
                 title: "Success",
                 description: t('toasts.groupLeftSuccess', { groupName: group.name }),
@@ -132,6 +132,14 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             setOpen(false);
         } catch (error) {
             console.error("Error leaving group:", error);
+            const permissionError = new FirestorePermissionError({
+                path: groupRef.path,
+                operation: 'update',
+                requestResourceData: {
+                    members: group.members.filter(id => id !== user.uid)
+                },
+            });
+            errorEmitter.emit('permission-error', permissionError);
             toast({
                 variant: "destructive",
                 title: "Error",

@@ -17,10 +17,9 @@ import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
 import { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { db, app } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
-import { app } from '@/lib/firebase/config';
 import { Skeleton } from '../ui/skeleton';
 import { useLanguage } from '@/providers/language-provider';
 import {
@@ -31,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft } from 'lucide-react';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function SettingsView({ onBack }: { onBack: () => void; }) {
   const { user, signOut, loading } = useAuth();
@@ -62,14 +63,32 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
           const messaging = getMessaging(app);
-          const currentToken = await getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY });
+          // IMPORTANT: You need to generate this VAPID key in the Firebase Console
+          // under Project Settings > Cloud Messaging > Web Push certificates
+          const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+          if (!vapidKey) {
+             console.error('VAPID key is missing. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
+             toast({ variant: "destructive", description: "VAPID key is missing from config." });
+             return;
+          }
+          const currentToken = await getToken(messaging, { vapidKey });
           if (currentToken) {
             const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
-              fcmTokens: arrayUnion(currentToken),
-            });
-            setNotificationsEnabled(true);
-            toast({ description: t('toasts.notificationsEnabled') });
+            const updateData = { fcmTokens: arrayUnion(currentToken) };
+            
+            updateDoc(userRef, updateData)
+              .then(() => {
+                setNotificationsEnabled(true);
+                toast({ description: t('toasts.notificationsEnabled') });
+              })
+              .catch(error => {
+                 const permissionError = new FirestorePermissionError({
+                  path: userRef.path,
+                  operation: 'update',
+                  requestResourceData: updateData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+              })
           } else {
              toast({ variant: "destructive", description: t('toasts.getNotificationTokenError') });
           }
@@ -81,6 +100,9 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
         toast({ variant: "destructive", description: t('toasts.enableNotificationsError') });
       }
     } else {
+       // Note: Disabling notifications on the client doesn't remove the token from the server.
+       // For a full implementation, you'd need to remove the token from the user's fcmTokens array.
+       // This is simplified for now.
        setNotificationsEnabled(false);
        toast({ description: t('toasts.notificationsDisabled') });
     }
@@ -100,10 +122,10 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
 
 
   return (
-    <div className="flex-1 p-4 sm:p-6 md:p-8">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
         <div className="relative mb-6 flex items-center">
-          <Button variant="ghost" size="icon" className="absolute -left-12" onClick={onBack}>
+          <Button variant="ghost" size="icon" className="absolute -left-12 hidden md:inline-flex" onClick={onBack}>
             <ArrowLeft className="h-6 w-6" />
           </Button>
           <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
@@ -124,9 +146,9 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
                   {user.displayName?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-1">
-                <p className="text-lg font-semibold">{user.displayName}</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
+              <div className="space-y-1 overflow-hidden">
+                <p className="truncate text-lg font-semibold">{user.displayName}</p>
+                <p className="truncate text-sm text-muted-foreground">{user.email}</p>
               </div>
             </div>
             <Separator className="my-6" />
