@@ -61,7 +61,7 @@ service cloud.firestore {
      * @allow (create) - Any authenticated user can create a group.
      * @allow (get) - Any authenticated user can read a group's details to join.
      * @allow (list) - Any member of the group can list the groups they belong to.
-     * @allow (update) - The group admin can update anything; other members can join.
+     * @allow (update) - The group admin can update anything; other members can join or be managed.
      * @allow (delete) - Only the group admin can delete the group.
      * @principle Manages group creation, allows member reads, and controls updates/deletions.
      */
@@ -78,24 +78,30 @@ service cloud.firestore {
           return request.auth.uid in resource.data.members;
       }
 
-      // Helper function to check if the user is joining the group
+      // Helper function to check if a user is joining the group (adding themselves)
       function isJoining() {
-        // Allow if the user is adding themselves to the members list
-        // and not changing anything else.
         let addedMembers = request.resource.data.members.toSet().difference(resource.data.members.toSet());
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
       
-      // Helper function to check if the admin is managing members
+      // Helper function to check if the user is a member managing other members
       function isManagingMembers() {
-        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['members']);
+        // Allow members to only change the 'members' field
+        return isMember() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']);
+      }
+      
+      // Helper function for admin managing other fields
+      function isAdminManaging() {
+        // Admin can change name, photoURL, and members
+        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photoURL', 'members', 'pinnedMessage', 'lastRead']);
       }
 
       allow get: if isSignedIn();
       allow list: if isMember();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isAdmin() || isJoining());
+      // Allow updates if user is joining, an admin is managing, or a member is managing members.
+      allow update: if isSignedIn() && (isJoining() || isAdminManaging() || isManagingMembers());
       allow delete: if isSignedIn() && isAdmin();
 
       /**

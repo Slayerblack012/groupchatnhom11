@@ -194,12 +194,18 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
         return;
     }
     const groupRef = doc(db, "groups", group.id);
+    const updateData = { name: groupName.trim() };
     try {
-        await updateDoc(groupRef, { name: groupName.trim() });
+        await updateDoc(groupRef, updateData);
         toast({ title: "Success", description: "Group name updated." });
     } catch (error) {
         console.error("Error updating group name:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to update group name." });
+        const permissionError = new FirestorePermissionError({
+            path: groupRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
     }
   };
 
@@ -223,10 +229,21 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             async () => {
                 const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                 const groupRef = doc(db, "groups", group.id);
-                await updateDoc(groupRef, { photoURL: downloadURL });
-                setGroup(prev => ({ ...prev, photoURL: downloadURL }));
-                toast({ title: "Success", description: "Group avatar updated."});
-                setIsUploading(false);
+                const updateData = { photoURL: downloadURL };
+                updateDoc(groupRef, updateData)
+                  .then(() => {
+                    setGroup(prev => ({ ...prev, photoURL: downloadURL }));
+                    toast({ title: "Success", description: "Group avatar updated."});
+                    setIsUploading(false);
+                  }).catch(error => {
+                     const permissionError = new FirestorePermissionError({
+                        path: groupRef.path,
+                        operation: 'update',
+                        requestResourceData: updateData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    setIsUploading(false);
+                  });
             }
         );
     } catch (error) {
@@ -269,6 +286,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
                         onChange={handleAvatarChange}
                         className="hidden"
                         accept="image/*"
+                        disabled={isUploading}
                     />
                     <Input 
                         value={groupName}
@@ -348,7 +366,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
                         <p className="text-xs text-muted-foreground">{member.uid === group.admin ? t('memberManagement.admin') : t('memberManagement.member')}</p>
                       </div>
                     </div>
-                    {member.uid !== group.admin && (
+                    {currentUser?.uid !== member.uid && (
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(member.uid)} aria-label={`Remove ${member.displayName}`}>
                             <UserX className="h-4 w-4 text-destructive" />
                         </Button>
