@@ -141,7 +141,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
 
       updateDoc(groupRef, updateData)
         .then(() => {
-          setMembers(prev => [...prev, userToAdd]);
+          setGroup(prev => ({ ...prev, members: [...prev.members, userToAdd.uid]}));
           setSearchQuery("");
           setSearchResults([]);
           toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
@@ -167,7 +167,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     
     updateDoc(groupRef, updateData)
       .then(() => {
-        setMembers(prev => prev.filter(m => m.uid !== memberId));
+        setGroup(prev => ({ ...prev, members: prev.members.filter(id => id !== memberId)}));
         toast({ title: "Success", description: t('toasts.memberRemoved') });
       })
       .catch(error => {
@@ -358,3 +358,5 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     </Sheet>
   );
 }
+
+    
