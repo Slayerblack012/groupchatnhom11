@@ -59,10 +59,10 @@ service cloud.firestore {
      * @description Controls access to group documents.
      * @path /groups/{groupId}
      * @allow (create) - Any authenticated user can create a group.
-     * @allow (get, list) - Any user can read any group.
-     * @allow (update, delete) - Only the group admin (adminId) or a member can update the group.
-     * @deny (delete) - Non-admin users cannot delete groups.
-     * @principle Manages group creation, open access for reads, and restricts modification to the admin.
+     * @allow (get, list) - Any member of the group can read group details.
+     * @allow (update) - Any group member can update the group (e.g. name, pinning messages, adding members). A non-member can update to add themselves.
+     * @allow (delete) - Only the group admin can delete the group.
+     * @principle Manages group creation, allows member reads, and controls updates/deletions.
      */
     match /groups/{groupId} {
       function isSignedIn() {
@@ -86,7 +86,7 @@ service cloud.firestore {
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
 
-      allow get, list: if true;
+      allow get, list: if isMember();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (isMember() || isJoining());
       allow delete: if isSignedIn() && isAdmin();
@@ -94,11 +94,11 @@ service cloud.firestore {
       /**
        * @description Controls access to messages within a group.
        * @path /groups/{groupId}/messages/{messageId}
-       * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
-       * @allow (get, list) - Any user can read any message in a group.
-       * @allow (update, delete) - A user can update or delete their own message.
-       * @deny (delete) - Deleting another user's message is denied.
-       * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
+       * @allow (read) - Any group member can read messages.
+       * @allow (create) - Any group member can create a message, if they are the sender.
+       * @allow (update) - A user can update their own message, or any member can update reactions.
+       * @allow (delete) - A user can delete their own message.
+       * @principle Manages message creation and modification within groups, enforcing sender ownership for edits/deletes and allowing reaction updates from any member.
        */
       match /messages/{messageId} {
         function isGroupMember(groupId) {
@@ -124,8 +124,8 @@ service cloud.firestore {
       /**
        * @description Controls access to typing indicators within a group.
        * @path /groups/{groupId}/typing/{userId}
-       * @allow (create, update, delete) - A group member can manage their own typing indicator.
-       * @allow (list, get) - Any group member can see who is typing.
+       * @allow (read) - Any group member can see who is typing.
+       * @allow (write) - A group member can manage their own typing indicator.
        * @principle Allows members to signal their typing status to other members of the same group.
        */
       match /typing/{userId} {
