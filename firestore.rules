@@ -96,9 +96,8 @@ service cloud.firestore {
        * @path /groups/{groupId}/messages/{messageId}
        * @allow (read) - Any group member can read messages.
        * @allow (create) - Any group member can create a message, if they are the sender.
-       * @allow (update) - A user can update their own message, or any member can update reactions.
-       * @allow (delete) - A user can delete their own message.
-       * @principle Manages message creation and modification within groups, enforcing sender ownership for edits/deletes and allowing reaction updates from any member.
+       * @allow (update, delete) - Any group member can update or delete any message.
+       * @principle Manages message creation and modification within groups, allowing any member to modify or delete messages.
        */
       match /messages/{messageId} {
         function isGroupMember(groupId) {
@@ -117,8 +116,8 @@ service cloud.firestore {
 
         allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isGroupMember(groupId) && (isSender() || isUpdatingReactions());
-        allow delete: if isGroupMember(groupId) && isSender();
+        allow update: if isGroupMember(groupId);
+        allow delete: if isGroupMember(groupId);
       }
 
       /**
@@ -165,3 +164,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

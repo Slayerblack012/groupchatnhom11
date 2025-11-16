@@ -288,23 +288,17 @@ export default function Message({ message, group, currentUserId, senderProfile }
                                 <Pin className="mr-2 h-4 w-4" />
                                 <span>{t('message.pin')}</span>
                             </DropdownMenuItem>
-                            {isCurrentUser && (
-                            <>
-                                {message.contentType === 'text' && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        <span>{t('message.edit')}</span>
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>{t('message.delete')}</span>
+                            <DropdownMenuSeparator />
+                            {message.contentType === 'text' && (
+                                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>{t('message.edit')}</span>
                                 </DropdownMenuItem>
-                            </>
                             )}
+                            <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{t('message.delete')}</span>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -324,5 +318,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
     </div>
   );
 }
+
+    
 
     
