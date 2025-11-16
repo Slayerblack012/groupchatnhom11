@@ -10,6 +10,7 @@ import {
   setDoc,
   deleteDoc,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 import {
   ref,
@@ -98,6 +99,21 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     }
   }, [user, groupId, debouncedRemoveTyping]);
 
+  const updateGroupLastMessage = async (messageData: Partial<Message>) => {
+    const groupRef = doc(db, "groups", groupId);
+    const lastMessage = {
+        text: messageData.text,
+        createdAt: messageData.createdAt,
+        contentType: messageData.contentType,
+        senderName: messageData.senderName,
+    };
+    try {
+        await updateDoc(groupRef, { lastMessage });
+    } catch (error) {
+        console.error("Error updating group last message:", error);
+    }
+  };
+
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,20 +128,21 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
     removeTypingStatus();
     
-    // Custom ID including groupID for easier reference in edits.
     const messageId = `${groupId}_${Date.now()}`;
     const messagesCollection = doc(db, "groups", groupId, "messages", messageId);
-
-    const messageData: Omit<Message, 'createdAt'> = {
+    
+    const createdAt = Timestamp.now();
+    const messageData: Omit<Message, 'createdAt'> & { createdAt: Timestamp } = {
       id: messageId,
       text,
       contentType: 'text',
       senderId: user.uid,
       senderName: user.displayName,
       senderPhotoURL: user.photoURL,
+      createdAt,
     };
 
-    setDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
+    setDoc(messagesCollection, messageData).catch((error) => {
       const permissionError = new FirestorePermissionError({
         path: `groups/${groupId}/messages`,
         operation: 'create',
@@ -133,6 +150,8 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       });
       errorEmitter.emit('permission-error', permissionError);
     });
+
+    updateGroupLastMessage(messageData);
 
     setText("");
   };
@@ -174,8 +193,9 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           let contentType: Message['contentType'] = 'file';
           if (isImage) contentType = 'image';
           if (isVideo) contentType = 'video';
-
-          const messageData: Omit<Message, 'createdAt'> = {
+          
+          const createdAt = Timestamp.now();
+          const messageData: Omit<Message, 'createdAt'> & { createdAt: Timestamp } = {
             id: messageId,
             fileUrl: downloadURL,
             fileName: file.name,
@@ -183,9 +203,10 @@ export default function MessageInput({ groupId }: { groupId: string }) {
             senderId: user.uid,
             senderName: user.displayName,
             senderPhotoURL: user.photoURL,
+            createdAt,
           };
           
-          setDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
+          setDoc(messagesCollection, messageData).catch((error) => {
             const permissionError = new FirestorePermissionError({
                 path: `groups/${groupId}/messages`,
                 operation: 'create',
@@ -193,6 +214,9 @@ export default function MessageInput({ groupId }: { groupId: string }) {
             });
             errorEmitter.emit('permission-error', permissionError);
           });
+
+          updateGroupLastMessage(messageData);
+
           setUploading(false);
           setFileToSend(null);
         }
@@ -312,5 +336,3 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     </div>
   );
 }
-
-    

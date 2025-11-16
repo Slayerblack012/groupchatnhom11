@@ -11,6 +11,8 @@ import {
   getDocs,
   where,
   Timestamp,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Message as MessageType, Group, UserProfile } from "@/types";
@@ -36,6 +38,18 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Mark messages as read effect
+  useEffect(() => {
+    if (!user || !groupId) return;
+    const groupRef = doc(db, "groups", groupId);
+    const lastReadUpdate = {
+        [`lastRead.${user.uid}`]: serverTimestamp()
+    };
+    updateDoc(groupRef, lastReadUpdate).catch(err => {
+      console.error("Failed to update last read timestamp", err);
+    })
+  }, [groupId, user]);
 
   useEffect(() => {
     if (!user) return;

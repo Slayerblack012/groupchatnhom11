@@ -12,6 +12,7 @@ import {
   getDoc,
   setDoc,
   arrayUnion,
+  orderBy,
 } from "firebase/firestore";
 import { useAuth } from "@/providers/auth-provider";
 import { db } from "@/lib/firebase/config";
@@ -45,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/providers/language-provider";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
+import { Badge } from "../ui/badge";
 
 export default function Sidebar({
   onSelectGroup,
@@ -67,7 +69,8 @@ export default function Sidebar({
     setLoading(true);
     const q = query(
       collection(db, "groups"),
-      where("members", "array-contains", user.uid)
+      where("members", "array-contains", user.uid),
+      orderBy("lastMessage.createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(
@@ -91,6 +94,17 @@ export default function Sidebar({
 
     return () => unsubscribe();
   }, [user, toast, t]);
+
+  const isUnread = (group: Group) => {
+    if (!user || !group.lastMessage?.createdAt) {
+      return false;
+    }
+    const lastReadTimestamp = group.lastRead?.[user.uid];
+    if (!lastReadTimestamp) {
+      return true; // Never read
+    }
+    return group.lastMessage.createdAt > lastReadTimestamp;
+  };
 
   return (
     <aside className="flex h-full w-full max-w-xs flex-col border-r bg-card/50">
@@ -135,7 +149,8 @@ export default function Sidebar({
                         <Users className="h-4 w-4" />
                     </AvatarFallback>
                 </Avatar>
-                <span className="truncate">{group.name}</span>
+                <span className="truncate flex-1 text-left">{group.name}</span>
+                {isUnread(group) && <Badge className="h-5">Mới</Badge>}
               </Button>
             ))}
           </nav>

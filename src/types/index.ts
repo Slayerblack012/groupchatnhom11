@@ -17,6 +17,8 @@ export interface Group {
   createdAt: Timestamp;
   photoURL?: string;
   pinnedMessage?: Pick<Message, 'id' | 'text' | 'contentType' | 'senderId' | 'senderName'> | null;
+  lastMessage?: Pick<Message, 'text' | 'createdAt' | 'contentType' | 'senderName'>;
+  lastRead?: { [key: string]: Timestamp };
 }
 
 export interface Message {

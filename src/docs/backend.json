@@ -69,6 +69,33 @@
           "type": "string",
           "description": "URL of the group's avatar picture.",
           "format": "uri"
+        },
+        "lastMessage": {
+          "type": "object",
+          "description": "A summary of the last message sent in the group for display in the group list.",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "contentType": {
+              "type": "string"
+            },
+            "senderName": {
+              "type": "string"
+            }
+          }
+        },
+        "lastRead": {
+          "type": "object",
+          "description": "Map of user IDs to the timestamp of their last read message in this group.",
+          "additionalProperties": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "required": [
