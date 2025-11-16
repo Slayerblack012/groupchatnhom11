@@ -77,12 +77,18 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
       setLoadingMembers(true);
       try {
         const memberProfiles: UserProfile[] = [];
-        for (const memberId of group.members) {
-          const userRef = doc(db, "users", memberId);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            memberProfiles.push(userSnap.data() as UserProfile);
-          }
+        const memberChunks: string[][] = [];
+        for (let i = 0; i < group.members.length; i += 10) {
+            memberChunks.push(group.members.slice(i, i + 10));
+        }
+
+        for (const chunk of memberChunks) {
+            const usersRef = collection(db, "users");
+            const q = query(usersRef, where("uid", "in", chunk));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                memberProfiles.push(doc.data() as UserProfile);
+            });
         }
         setMembers(memberProfiles);
       } catch (error) {
@@ -143,6 +149,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
       updateDoc(groupRef, updateData)
         .then(() => {
           setGroup(prev => ({ ...prev, members: [...prev.members, userToAdd.uid]}));
+          setMembers(prev => [...prev, userToAdd]);
           setSearchQuery("");
           setSearchResults([]);
           toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
@@ -169,6 +176,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     updateDoc(groupRef, updateData)
       .then(() => {
         setGroup(prev => ({ ...prev, members: prev.members.filter(id => id !== memberId)}));
+        setMembers(prev => prev.filter(m => m.uid !== memberId));
         toast({ title: "Success", description: t('toasts.memberRemoved') });
       })
       .catch(error => {
@@ -312,40 +320,42 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             </div>
         </div>
         <Separator />
-        <div className="py-4">
-          <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.addMember')}</h3>
-          <div className="flex gap-2">
-            <Input
-              type="email"
-              placeholder={t('memberManagement.addMemberPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+        {isAdmin && (
+          <div className="py-4">
+            <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.addMember')}</h3>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder={t('memberManagement.addMemberPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="mt-2 space-y-2">
+                {isSearching && <Skeleton className="h-12 w-full"/>}
+                {!isSearching && searchResults.map(user => (
+                    <div key={user.uid} className="flex items-center justify-between rounded-md border p-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.photoURL || ""} alt={user.displayName || ""} />
+                              <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="text-sm font-medium">{user.displayName}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => handleAddMember(user)}>
+                            <Plus className="h-4 w-4 mr-2"/> Add
+                        </Button>
+                    </div>
+                ))}
+                {!isSearching && searchResults.length === 0 && searchQuery && (
+                    <p className="text-sm text-muted-foreground text-center py-2">{t('toasts.userNotFound')}</p>
+                )}
+            </div>
           </div>
-          <div className="mt-2 space-y-2">
-              {isSearching && <Skeleton className="h-12 w-full"/>}
-              {!isSearching && searchResults.map(user => (
-                  <div key={user.uid} className="flex items-center justify-between rounded-md border p-2">
-                      <div className="flex items-center gap-2">
-                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.photoURL || ""} alt={user.displayName || ""} />
-                            <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
-                         </Avatar>
-                         <div>
-                            <p className="text-sm font-medium">{user.displayName}</p>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
-                         </div>
-                      </div>
-                      <Button size="sm" onClick={() => handleAddMember(user)}>
-                          <Plus className="h-4 w-4 mr-2"/> Add
-                      </Button>
-                  </div>
-              ))}
-              {!isSearching && searchResults.length === 0 && searchQuery && (
-                  <p className="text-sm text-muted-foreground text-center py-2">{t('toasts.userNotFound')}</p>
-              )}
-          </div>
-        </div>
+        )}
         <Separator />
         <div className="py-4 flex-1 flex flex-col min-h-0">
           <h3 className="mb-2 text-sm font-semibold">{t('memberManagement.currentMembers')}</h3>
@@ -366,7 +376,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
                         <p className="text-xs text-muted-foreground">{member.uid === group.admin ? t('memberManagement.admin') : t('memberManagement.member')}</p>
                       </div>
                     </div>
-                    {currentUser?.uid !== member.uid && (
+                    {isAdmin && currentUser?.uid !== member.uid && (
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(member.uid)} aria-label={`Remove ${member.displayName}`}>
                             <UserX className="h-4 w-4 text-destructive" />
                         </Button>

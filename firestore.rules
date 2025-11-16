@@ -84,16 +84,12 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
-      
-      function isAdminManaging() {
-        return isAdmin();
-      }
 
       allow get: if isSignedIn();
       allow list: if isMember();
       allow create: if isSignedIn();
       // Allow updates if user is joining or an admin is managing.
-      allow update: if isSignedIn() && (isJoining() || isAdminManaging());
+      allow update: if isSignedIn() && (isJoining() || isAdmin());
       allow delete: if isSignedIn() && isAdmin();
 
       /**
