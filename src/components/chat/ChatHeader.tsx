@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/providers/auth-provider";
 import type { Group } from "@/types";
-import { Users, LogOut } from "lucide-react";
+import { Users, LogOut, Settings } from "lucide-react";
 import MemberManagementSheet from "./MemberManagementSheet";
 import { Button } from "../ui/button";
 import {
@@ -53,11 +53,8 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {isAdmin ? (
-          <MemberManagementSheet group={group} />
-        ) : (
-          <ViewMembersSheet group={group} />
-        )}
+        {isAdmin && <MemberManagementSheet group={group} />}
+        <ViewMembersSheet group={group} />
         <LeaveGroupDialog group={group} onLeave={onGroupLeft} />
       </div>
     </div>
