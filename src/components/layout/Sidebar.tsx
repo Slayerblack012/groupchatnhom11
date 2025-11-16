@@ -69,8 +69,9 @@ export default function Sidebar({
     setLoading(true);
     const q = query(
       collection(db, "groups"),
-      where("members", "array-contains", user.uid),
-      orderBy("lastMessage.createdAt", "desc")
+      where("members", "array-contains", user.uid)
+      // Removing order by to prevent missing index issue
+      // orderBy("lastMessage.createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(
@@ -79,6 +80,13 @@ export default function Sidebar({
         const userGroups = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as Group)
         );
+        // Manual sort on the client-side
+        userGroups.sort((a, b) => {
+          const timeA = a.lastMessage?.createdAt?.toMillis() || a.createdAt?.toMillis() || 0;
+          const timeB = b.lastMessage?.createdAt?.toMillis() || b.createdAt?.toMillis() || 0;
+          return timeB - timeA;
+        });
+
         setGroups(userGroups);
         setLoading(false);
       },
@@ -457,3 +465,5 @@ function JoinGroupDialog() {
     </Dialog>
   );
 }
+
+    
