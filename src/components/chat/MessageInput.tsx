@@ -20,7 +20,7 @@ import { db, storage } from "@/lib/firebase/config";
 import { useAuth } from "@/providers/auth-provider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Send } from "lucide-react";
+import { Paperclip, Send, Smile } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { compressImage } from "@/lib/image-compression";
@@ -29,6 +29,10 @@ import { FirestorePermissionError } from "@/firebase/errors";
 import { useLanguage } from "@/providers/language-provider";
 import type { Message } from "@/types";
 import FileUploadPreview from "./FileUploadPreview";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+const EMOJI_LIST = ['😂', '❤️', '🔥', '👍', '😭', '😮', '😊', '🤔', '🎉', '👋', '🙏', '💯'];
+
 
 // Debounce hook
 const useDebounce = (callback: () => void, delay: number) => {
@@ -233,6 +237,11 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         debouncedRemoveTyping();
     }
   };
+  
+  const handleEmojiSelect = (emoji: string) => {
+    setText(prev => prev + emoji);
+    setFileToSend(null); // Ensure file is deselected if user adds emoji
+  };
 
 
   return (
@@ -247,6 +256,28 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         </div>
       )}
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" disabled={uploading} aria-label="Add emoji">
+                    <Smile className="h-5 w-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+                <div className="grid grid-cols-6 gap-1">
+                    {EMOJI_LIST.map(emoji => (
+                        <Button
+                            key={emoji}
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEmojiSelect(emoji)}
+                            className="text-xl"
+                        >
+                            {emoji}
+                        </Button>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
         <Button
           type="button"
           variant="ghost"
@@ -272,7 +303,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           onChange={handleTextChange}
           className="flex-1"
           autoComplete="off"
-          disabled={uploading || !!fileToSend}
+          disabled={uploading}
         />
         <Button type="submit" size="icon" disabled={(!text.trim() && !fileToSend) || uploading} aria-label={t('messageInput.sendMessage')}>
           <Send className="h-5 w-5" />
@@ -281,3 +312,5 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     </div>
   );
 }
+
+    
