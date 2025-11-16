@@ -4,7 +4,10 @@
 import { useState, useEffect } from "react";
 import {
   doc,
-  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Group, UserProfile } from "@/types";
@@ -36,15 +39,20 @@ export default function ViewMembersSheet({ group }: ViewMembersSheetProps) {
 
   useEffect(() => {
     const fetchMembers = async () => {
-      if (!group?.members) return;
+      if (!group?.members || group.members.length === 0) {
+        setMembers([]);
+        setLoadingMembers(false);
+        return;
+      };
       setLoadingMembers(true);
       try {
-        const memberPromises = group.members.map(memberId => getDoc(doc(db, "users", memberId)));
-        const memberDocs = await Promise.all(memberPromises);
+        const usersRef = collection(db, 'users');
+        // Firestore 'in' queries are limited to 30 items. 
+        // If you expect more members, you'd need to chunk this array.
+        const q = query(usersRef, where('uid', 'in', group.members));
+        const querySnapshot = await getDocs(q);
         
-        const memberProfiles = memberDocs
-            .filter(doc => doc.exists())
-            .map(doc => doc.data() as UserProfile);
+        const memberProfiles = querySnapshot.docs.map(doc => doc.data() as UserProfile);
 
         setMembers(memberProfiles);
       } catch (error) {
