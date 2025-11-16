@@ -163,7 +163,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
   }
   
   return (
-    <div className="flex h-screen flex-col telegram-bg">
+    <div className="flex h-screen flex-col bg-background">
       <ChatHeader group={group} onGroupLeft={onGroupLeft}/>
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-4 space-y-4">
