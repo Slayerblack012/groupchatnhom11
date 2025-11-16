@@ -76,7 +76,10 @@
     "sending": "đang gửi...",
     "downloadFile": "Tải tệp",
     "edit": "Sửa tin nhắn",
-    "edited": "đã chỉnh sửa"
+    "delete": "Xóa tin nhắn",
+    "edited": "đã chỉnh sửa",
+    "cancelEdit": "Hủy",
+    "saveEdit": "Lưu"
   },
   "welcome": {
     "title": "Chào mừng đến với groupchat",

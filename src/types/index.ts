@@ -20,6 +20,7 @@ export interface Group {
 
 export interface Message {
   id: string;
+  groupId: string;
   text?: string;
   fileUrl?: string;
   fileName?: string;

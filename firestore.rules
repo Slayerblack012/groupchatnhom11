@@ -87,8 +87,8 @@ service cloud.firestore {
        * @path /groups/{groupId}/messages/{messageId}
        * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
        * @allow (get, list) - Any user can read any message in a group.
-       * @allow (update, delete) - No one can update or delete a message.
-       * @deny (delete) - Deleting a message is always denied.
+       * @allow (update, delete) - A user can update or delete their own message.
+       * @deny (delete) - Deleting another user's message is denied.
        * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
        */
       match /messages/{messageId} {
@@ -102,8 +102,8 @@ service cloud.firestore {
 
         allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isGroupMember(groupId) && isSender() && request.resource.data.text != resource.data.text;
-        allow delete: if false;
+        allow update: if isGroupMember(groupId) && isSender();
+        allow delete: if isGroupMember(groupId) && isSender();
       }
 
       /**

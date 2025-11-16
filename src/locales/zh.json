@@ -76,7 +76,10 @@
     "sending": "发送中...",
     "downloadFile": "下载文件",
     "edit": "编辑消息",
-    "edited": "已编辑"
+    "delete": "删除消息",
+    "edited": "已编辑",
+    "cancelEdit": "取消",
+    "saveEdit": "保存"
   },
   "welcome": {
     "title": "欢迎来到groupchat",

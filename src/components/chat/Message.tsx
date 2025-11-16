@@ -8,16 +8,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
-import { File, Video, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { File, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -89,14 +90,14 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(message.text || "");
 
-  const canEdit = isCurrentUser && message.contentType === 'text';
+  const canInteract = isCurrentUser;
 
   const handleEditSave = async () => {
     if (editedText.trim() === message.text) {
         setIsEditing(false);
         return;
     }
-    const messageRef = doc(db, "groups", message.id.split('_')[0], "messages", message.id);
+    const messageRef = doc(db, "groups", message.groupId, "messages", message.id);
 
     const updateData = {
         text: editedText,
@@ -115,6 +116,20 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
             errorEmitter.emit('permission-error', permissionError);
         });
   };
+
+  const handleDeleteMessage = async () => {
+    const messageRef = doc(db, "groups", message.groupId, "messages", message.id);
+    
+    deleteDoc(messageRef)
+        .catch(error => {
+            const permissionError = new FirestorePermissionError({
+                path: messageRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+  };
+
 
   return (
     <div
@@ -153,8 +168,8 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
                                     className="text-sm bg-background/20 border-0"
                                 />
                                 <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
-                                    <Button size="sm" onClick={handleEditSave}>Save</Button>
+                                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>{t('message.cancelEdit')}</Button>
+                                    <Button size="sm" onClick={handleEditSave}>{t('message.saveEdit')}</Button>
                                 </div>
                             </div>
                         ) : (
@@ -162,7 +177,7 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
                         )}
                     </CardContent>
                 </Card>
-                {canEdit && (
+                {canInteract && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
@@ -170,9 +185,15 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                <span>{t('message.edit')}</span>
+                            {message.contentType === 'text' && (
+                                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    <span>{t('message.edit')}</span>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{t('message.delete')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

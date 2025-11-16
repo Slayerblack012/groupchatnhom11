@@ -10,7 +10,6 @@ import {
   doc,
   getDocs,
   where,
-  getDoc,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -64,7 +63,11 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
     
     const unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
         const newMessages = snapshot.docs.map(
-          (doc: any) => ({ id: doc.id, ...doc.data() } as MessageType)
+          (doc: any) => ({ 
+            id: doc.id,
+            groupId: groupId,
+            ...doc.data() 
+        } as MessageType)
         );
         setMessages(newMessages);
         setLoading(false);
@@ -107,18 +110,28 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
     const fetchMemberData = async () => {
       if (!group || group.members.length === 0) return;
       
-      const memberIds = group.members.filter(id => !members[id]);
-      if (memberIds.length === 0) return;
+      const memberIdsToFetch = group.members.filter(id => !members[id]);
+      if (memberIdsToFetch.length === 0) return;
       
       try {
         const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('uid', 'in', group.members));
-        const querySnapshot = await getDocs(q);
+        // Firestore 'in' query is limited to 30 items per query.
+        // Chunking the memberIds array to handle more than 30 members.
+        const chunks = [];
+        for (let i = 0; i < memberIdsToFetch.length; i += 30) {
+            chunks.push(memberIdsToFetch.slice(i, i + 30));
+        }
+        
         const memberData: Record<string, UserProfile> = {};
-        querySnapshot.forEach((doc) => {
-            const userData = doc.data() as UserProfile;
-            memberData[userData.uid] = userData;
-        });
+        for (const chunk of chunks) {
+            const q = query(usersRef, where('uid', 'in', chunk));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data() as UserProfile;
+                memberData[userData.uid] = userData;
+            });
+        }
+        
         setMembers(prev => ({...prev, ...memberData}));
       } catch (error) {
         console.error("Error fetching member data:", error);
@@ -130,7 +143,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
 
   if (loading || !user || !group) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col bg-background">
         <div className="flex items-center p-4 border-b">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="ml-4 space-y-2">

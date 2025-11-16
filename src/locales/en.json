@@ -76,7 +76,10 @@
     "sending": "sending...",
     "downloadFile": "Download File",
     "edit": "Edit Message",
-    "edited": "edited"
+    "delete": "Delete Message",
+    "edited": "edited",
+    "cancelEdit": "Cancel",
+    "saveEdit": "Save"
   },
   "welcome": {
     "title": "Welcome to groupchat",
