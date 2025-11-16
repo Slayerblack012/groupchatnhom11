@@ -80,12 +80,11 @@ export default function Sidebar({
         setLoading(false);
       },
       (error) => {
-        console.error("Error fetching groups:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: t('toasts.fetchGroupsError'),
+        const permissionError = new FirestorePermissionError({
+          path: 'groups',
+          operation: 'list',
         });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
       }
     );
@@ -204,8 +203,11 @@ function CreateGroupDialog() {
           attempts++;
         }
       } catch (error) {
-        console.error("Error checking group ID uniqueness:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to check for group ID uniqueness." });
+        const permissionError = new FirestorePermissionError({
+            path: `groups/${finalGroupId}`,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setIsLoading(false);
         return;
       }

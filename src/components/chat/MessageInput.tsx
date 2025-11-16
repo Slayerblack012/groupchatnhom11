@@ -118,18 +118,12 @@ export default function MessageInput({ groupId }: { groupId: string }) {
 
     const messagesCollection = collection(db, "groups", groupId, "messages");
     addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
-      console.error("Error sending message:", error);
       const permissionError = new FirestorePermissionError({
         path: `groups/${groupId}/messages`,
         operation: 'create',
         requestResourceData: messageData
       });
       errorEmitter.emit('permission-error', permissionError);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: t('toasts.messageSendError'),
-      });
     });
 
     setText("");
@@ -181,18 +175,12 @@ export default function MessageInput({ groupId }: { groupId: string }) {
           };
           
           addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
-            console.error("Error sending file message:", error);
             const permissionError = new FirestorePermissionError({
                 path: `groups/${groupId}/messages`,
                 operation: 'create',
                 requestResourceData: messageData
             });
             errorEmitter.emit('permission-error', permissionError);
-             toast({
-                variant: "destructive",
-                title: "Error",
-                description: t('toasts.fileSendError'),
-            });
           });
           setUploading(false);
           setFileToSend(null);
