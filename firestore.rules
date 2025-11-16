@@ -77,9 +77,18 @@ service cloud.firestore {
           return request.auth.uid in resource.data.members;
       }
 
+      // Helper function to check if the user is joining the group
+      function isJoining() {
+        // Allow if the user is adding themselves to the members list
+        // and not changing anything else.
+        let addedMembers = request.resource.data.members.toSet().difference(resource.data.members.toSet());
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+               addedMembers.size() == 1 && request.auth.uid in addedMembers;
+      }
+
       allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && isMember();
+      allow update: if isSignedIn() && (isMember() || isJoining());
       allow delete: if isSignedIn() && isAdmin();
 
       /**
@@ -150,3 +159,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
