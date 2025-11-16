@@ -61,7 +61,7 @@ service cloud.firestore {
      * @allow (create) - Any authenticated user can create a group.
      * @allow (get) - Any authenticated user can read a group's details to join.
      * @allow (list) - Any member of the group can list the groups they belong to.
-     * @allow (update) - Any group member can update the group, or a non-member can update to add themselves.
+     * @allow (update) - The group admin can update anything; other members can join.
      * @allow (delete) - Only the group admin can delete the group.
      * @principle Manages group creation, allows member reads, and controls updates/deletions.
      */
@@ -86,11 +86,16 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
+      
+      // Helper function to check if the admin is managing members
+      function isManagingMembers() {
+        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasAny(['members']);
+      }
 
       allow get: if isSignedIn();
       allow list: if isMember();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isMember() || isJoining());
+      allow update: if isSignedIn() && (isAdmin() || isJoining());
       allow delete: if isSignedIn() && isAdmin();
 
       /**
