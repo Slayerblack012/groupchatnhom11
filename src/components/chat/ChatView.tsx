@@ -61,10 +61,9 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
         // Check if user is still a member
         if (!groupData.members.includes(user.uid)) {
           onGroupLeft();
-          setGroup(null);
-        } else {
-          setGroup(groupData);
+          return;
         }
+        setGroup(groupData);
       } else {
         setGroup(null);
         onGroupLeft();

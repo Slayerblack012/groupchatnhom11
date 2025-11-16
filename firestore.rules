@@ -59,9 +59,8 @@ service cloud.firestore {
      * @description Controls access to group documents.
      * @path /groups/{groupId}
      * @allow (create) - Any authenticated user can create a group.
-     * @allow (get) - Any authenticated user can read a group's details to join.
-     * @allow (list) - Any member of the group can list the groups they belong to.
-     * @allow (update) - The group admin can update anything; other members can join or be managed.
+     * @allow (get, list) - Any user can read any group.
+     * @allow (update) - An admin can manage members/details. A member can join or leave.
      * @allow (delete) - Only the group admin can delete the group.
      * @principle Manages group creation, allows member reads, and controls updates/deletions.
      */
@@ -77,19 +76,30 @@ service cloud.firestore {
       function isMember() {
           return request.auth.uid in resource.data.members;
       }
-
+      
       // Helper function to check if a user is joining the group (adding themselves)
       function isJoining() {
         let addedMembers = request.resource.data.members.toSet().difference(resource.data.members.toSet());
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
+      
+      // Helper function to check if a user is leaving the group (removing themselves)
+      function isLeaving() {
+          let removedMembers = resource.data.members.toSet().difference(request.resource.data.members.toSet());
+          return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+                 removedMembers.size() == 1 && request.auth.uid in removedMembers;
+      }
+      
+      // Helper function to check if an admin is managing members (adding/removing others)
+      function isAdminManaging() {
+        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photoURL', 'members']);
+      }
 
-      allow get: if isSignedIn();
-      allow list: if isMember();
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
-      // Allow updates if user is joining or an admin is managing.
-      allow update: if isSignedIn() && (isJoining() || isAdmin());
+      // Allow updates if user is joining, leaving, or an admin is managing.
+      allow update: if isSignedIn() && (isJoining() || isLeaving() || isAdminManaging());
       allow delete: if isSignedIn() && isAdmin();
 
       /**
@@ -124,8 +134,8 @@ service cloud.firestore {
       /**
        * @description Controls access to typing indicators within a group.
        * @path /groups/{groupId}/typing/{userId}
-       * @allow (read) - Any group member can see who is typing.
-       * @allow (write) - A group member can manage their own typing indicator.
+       * @allow (create, update, delete) - A group member can manage their own typing indicator.
+       * @allow (list, get) - Any group member can see who is typing.
        * @principle Allows members to signal their typing status to other members of the same group.
        */
       match /typing/{userId} {

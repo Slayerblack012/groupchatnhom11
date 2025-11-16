@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/providers/language-provider";
@@ -119,10 +119,10 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
         }
 
         const groupRef = doc(db, "groups", group.id);
+        const updateData = {
+            members: arrayRemove(user.uid)
+        };
         try {
-            const updateData = {
-                members: group.members.filter(id => id !== user.uid)
-            };
             await updateDoc(groupRef, updateData);
             toast({
                 title: "Success",
@@ -135,9 +135,7 @@ function LeaveGroupDialog({group, onLeave}: {group: Group, onLeave: () => void})
             const permissionError = new FirestorePermissionError({
                 path: groupRef.path,
                 operation: 'update',
-                requestResourceData: {
-                    members: group.members.filter(id => id !== user.uid)
-                },
+                requestResourceData: updateData
             });
             errorEmitter.emit('permission-error', permissionError);
             toast({
