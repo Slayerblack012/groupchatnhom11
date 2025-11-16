@@ -21,6 +21,7 @@ import { db } from "@/lib/firebase/config";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/providers/language-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import ViewMembersSheet from "./ViewMembersSheet";
 
 interface ChatHeaderProps {
   group: Group;
@@ -52,7 +53,11 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {isAdmin && <MemberManagementSheet group={group} />}
+        {isAdmin ? (
+          <MemberManagementSheet group={group} />
+        ) : (
+          <ViewMembersSheet group={group} />
+        )}
         <LeaveGroupDialog group={group} onLeave={onGroupLeft} />
       </div>
     </div>

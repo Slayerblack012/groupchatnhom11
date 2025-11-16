@@ -55,7 +55,10 @@
     "addMemberPlaceholder": "user@example.com",
     "currentMembers": "Thành viên hiện tại",
     "admin": "Quản trị viên",
-    "member": "Thành viên"
+    "member": "Thành viên",
+    "viewMembers": "Xem thành viên",
+    "membersListTitle": "Thành viên nhóm",
+    "membersListDescription": "Có {count} thành viên trong '{groupName}'."
   },
   "leaveGroupDialog": {
     "confirmTitle": "Bạn có chắc chắn không?",

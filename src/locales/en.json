@@ -55,7 +55,10 @@
     "addMemberPlaceholder": "user@example.com",
     "currentMembers": "Current Members",
     "admin": "Admin",
-    "member": "Member"
+    "member": "Member",
+    "viewMembers": "View Members",
+    "membersListTitle": "Group Members",
+    "membersListDescription": "There are {count} members in '{groupName}'."
   },
   "leaveGroupDialog": {
     "confirmTitle": "Are you absolutely sure?",
