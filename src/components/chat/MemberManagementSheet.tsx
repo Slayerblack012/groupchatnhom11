@@ -52,7 +52,7 @@ interface MemberManagementSheetProps {
 }
 
 export default function MemberManagementSheet({ group: initialGroup }: MemberManagementSheetProps) {
-  const { user: adminUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [group, setGroup] = useState(initialGroup);
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -64,6 +64,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const isAdmin = currentUser?.uid === group.admin;
 
   useEffect(() => {
     setGroup(initialGroup);
@@ -113,7 +114,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             );
             const querySnapshot = await getDocs(q);
             const users = querySnapshot.docs.map(doc => doc.data() as UserProfile);
-            setSearchResults(users.filter(u => u.uid !== adminUser?.uid));
+            setSearchResults(users.filter(u => u.uid !== currentUser?.uid));
         } catch (error) {
             console.error("Error searching users:", error);
             toast({ variant: "destructive", title: "Error", description: "Failed to search for users." });
@@ -127,7 +128,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-}, [searchQuery, adminUser?.uid, toast]);
+}, [searchQuery, currentUser?.uid, toast]);
 
 
   const handleAddMember = async (userToAdd: UserProfile) => {
@@ -252,31 +253,35 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
           </SheetDescription>
         </SheetHeader>
 
-        <div className="py-4 space-y-4">
-            <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                    <AvatarImage src={group.photoURL} />
-                    <AvatarFallback>
-                        <Camera className="h-6 w-6"/>
-                    </AvatarFallback>
-                </Avatar>
-                <Input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                    accept="image/*"
-                />
-                 <Input 
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    onBlur={handleGroupNameChange}
-                    className="text-lg font-semibold"
-                    disabled={isUploading}
-                 />
+        {isAdmin && (
+          <>
+            <div className="py-4 space-y-4">
+                <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <AvatarImage src={group.photoURL} />
+                        <AvatarFallback>
+                            <Camera className="h-6 w-6"/>
+                        </AvatarFallback>
+                    </Avatar>
+                    <Input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                        accept="image/*"
+                    />
+                    <Input 
+                        value={groupName}
+                        onChange={(e) => setGroupName(e.target.value)}
+                        onBlur={handleGroupNameChange}
+                        className="text-lg font-semibold"
+                        disabled={isUploading}
+                    />
+                </div>
             </div>
-        </div>
-        <Separator />
+            <Separator />
+          </>
+        )}
 
         <div className="py-4">
             <Label className="text-sm font-semibold">{t('joinGroupDialog.groupIdLabel')}</Label>
@@ -343,7 +348,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
                         <p className="text-xs text-muted-foreground">{member.uid === group.admin ? t('memberManagement.admin') : t('memberManagement.member')}</p>
                       </div>
                     </div>
-                    {adminUser?.uid === group.admin && member.uid !== group.admin && (
+                    {member.uid !== group.admin && (
                         <Button variant="ghost" size="icon" onClick={() => handleRemoveMember(member.uid)} aria-label={`Remove ${member.displayName}`}>
                             <UserX className="h-4 w-4 text-destructive" />
                         </Button>

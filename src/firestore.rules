@@ -86,7 +86,7 @@ service cloud.firestore {
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
 
-      allow get, list: if true;
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (isMember() || isJoining());
       allow delete: if isSignedIn() && isAdmin();
@@ -94,11 +94,10 @@ service cloud.firestore {
       /**
        * @description Controls access to messages within a group.
        * @path /groups/{groupId}/messages/{messageId}
-       * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
-       * @allow (get, list) - Any user can read any message in a group.
-       * @allow (update, delete) - A user can update or delete their own message.
-       * @deny (delete) - Deleting another user's message is denied.
-       * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
+       * @allow (read) - Any group member can read messages.
+       * @allow (create) - Any group member can create a message, if they are the sender.
+       * @allow (update, delete) - Any group member can update or delete any message.
+       * @principle Manages message creation and modification within groups, allowing any member to modify or delete messages.
        */
       match /messages/{messageId} {
         function isGroupMember(groupId) {
@@ -117,8 +116,8 @@ service cloud.firestore {
 
         allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isGroupMember(groupId) && (isSender() || isUpdatingReactions());
-        allow delete: if isGroupMember(groupId) && isSender();
+        allow update: if isGroupMember(groupId);
+        allow delete: if isGroupMember(groupId);
       }
 
       /**
