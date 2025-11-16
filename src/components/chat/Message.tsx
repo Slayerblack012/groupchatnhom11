@@ -92,7 +92,6 @@ export default function Message({ message, group, currentUserId, senderProfile }
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(message.text || "");
 
-  const canInteract = isCurrentUser;
 
   const handleEditSave = async () => {
     if (editedText.trim() === message.text) {
@@ -214,7 +213,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
                             <Pin className="mr-2 h-4 w-4" />
                             <span>{t('message.pin')}</span>
                         </DropdownMenuItem>
-                        {canInteract && (
+                        {isCurrentUser && (
                           <>
                             <DropdownMenuSeparator />
                             {message.contentType === 'text' && (
@@ -248,3 +247,4 @@ export default function Message({ message, group, currentUserId, senderProfile }
     </div>
   );
 }
+
