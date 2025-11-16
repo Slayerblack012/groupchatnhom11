@@ -55,20 +55,31 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
             variant: "destructive",
             description: t('toasts.notificationsNotSupported')
         });
+        setNotificationsEnabled(false);
         return;
     }
     
     if (enabled) {
+      if (Notification.permission === 'denied') {
+        toast({
+            variant: "destructive",
+            title: t('toasts.notificationPermissionDenied'),
+            description: t('toasts.notificationPermissionDeniedDesc'),
+            duration: 10000,
+        });
+        setNotificationsEnabled(false);
+        return;
+      }
+      
       try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
           const messaging = getMessaging(app);
-          // IMPORTANT: You need to generate this VAPID key in the Firebase Console
-          // under Project Settings > Cloud Messaging > Web Push certificates
           const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
           if (!vapidKey) {
              console.error('VAPID key is missing. Please add NEXT_PUBLIC_FIREBASE_VAPID_KEY to your environment variables.');
              toast({ variant: "destructive", description: "VAPID key is missing from config." });
+             setNotificationsEnabled(false);
              return;
           }
           const currentToken = await getToken(messaging, { vapidKey });
@@ -88,21 +99,22 @@ export default function SettingsView({ onBack }: { onBack: () => void; }) {
                   requestResourceData: updateData,
                 });
                 errorEmitter.emit('permission-error', permissionError);
+                setNotificationsEnabled(false);
               })
           } else {
              toast({ variant: "destructive", description: t('toasts.getNotificationTokenError') });
+             setNotificationsEnabled(false);
           }
         } else {
-            toast({ variant: "destructive", description: t('toasts.notificationPermissionDenied') });
+            toast({ variant: "destructive", title: t('toasts.notificationPermissionDenied') });
+            setNotificationsEnabled(false);
         }
       } catch (error) {
         console.error('Error enabling notifications:', error);
         toast({ variant: "destructive", description: t('toasts.enableNotificationsError') });
+        setNotificationsEnabled(false);
       }
     } else {
-       // Note: Disabling notifications on the client doesn't remove the token from the server.
-       // For a full implementation, you'd need to remove the token from the user's fcmTokens array.
-       // This is simplified for now.
        setNotificationsEnabled(false);
        toast({ description: t('toasts.notificationsDisabled') });
     }

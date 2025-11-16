@@ -140,6 +140,7 @@
     "notificationsEnabled": "通知已启用。",
     "getNotificationTokenError": "无法获取通知令牌。",
     "notificationPermissionDenied": "通知权限被拒绝。",
+    "notificationPermissionDeniedDesc": "您已阻止通知。请在您的浏览器设置中启用它们。",
     "enableNotificationsError": "启用通知失败。",
     "notificationsDisabled": "通知已在本地禁用。注意：服务器可能仍会发送推送，直到令牌过期。"
   },

@@ -140,6 +140,7 @@
     "notificationsEnabled": "Notifications enabled.",
     "getNotificationTokenError": "Could not get notification token.",
     "notificationPermissionDenied": "Notification permission denied.",
+    "notificationPermissionDeniedDesc": "You have blocked notifications. Please enable them in your browser settings.",
     "enableNotificationsError": "Failed to enable notifications.",
     "notificationsDisabled": "Notifications disabled locally. Note: Server may still send pushes until token expires."
   },
