@@ -91,7 +91,6 @@ export default function Message({ message, group, currentUserId, senderProfile }
   const { t } = useLanguage();
   const { user } = useAuth();
   const isCurrentUser = message.senderId === currentUserId;
-  const isGroupAdmin = currentUserId === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
   const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
   const [isEditing, setIsEditing] = useState(false);
@@ -167,8 +166,10 @@ export default function Message({ message, group, currentUserId, senderProfile }
 
     let updateData;
     if (userHasReacted) {
+      // User is removing their reaction
       updateData = { [reactionKey]: arrayRemove(user.uid) };
     } else {
+      // User is adding their reaction
       updateData = { [reactionKey]: arrayUnion(user.uid) };
     }
 

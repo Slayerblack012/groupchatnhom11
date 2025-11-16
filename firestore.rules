@@ -109,9 +109,15 @@ service cloud.firestore {
           return request.auth.uid == resource.data.senderId;
         }
 
+        // Helper function for reaction updates
+        function isUpdatingReactions() {
+          let affected = request.resource.data.diff(resource.data).affectedKeys();
+          return affected.size() == 1 && affected.has('reactions');
+        }
+
         allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if isGroupMember(groupId) && isSender();
+        allow update: if isGroupMember(groupId) && (isSender() || isUpdatingReactions());
         allow delete: if isGroupMember(groupId) && isSender();
       }
 
@@ -159,5 +165,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
