@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  doc,
   getDocs,
   collection,
   query,
@@ -26,6 +25,8 @@ import { Users } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
 import { useLanguage } from "@/providers/language-provider";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 interface ViewMembersSheetProps {
   group: Group;
@@ -38,33 +39,36 @@ export default function ViewMembersSheet({ group }: ViewMembersSheetProps) {
   const { t } = useLanguage();
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetchMembers = () => {
       if (!group?.members || group.members.length === 0) {
         setMembers([]);
         setLoadingMembers(false);
         return;
       };
       setLoadingMembers(true);
-      try {
-        const usersRef = collection(db, 'users');
-        // Firestore 'in' queries are limited to 30 items. 
-        // If you expect more members, you'd need to chunk this array.
-        const q = query(usersRef, where('uid', 'in', group.members));
-        const querySnapshot = await getDocs(q);
-        
+      
+      const usersRef = collection(db, 'users');
+      // Firestore 'in' queries are limited to 30 items. 
+      // If you expect more members, you'd need to chunk this array.
+      const q = query(usersRef, where('uid', 'in', group.members));
+      
+      getDocs(q).then(querySnapshot => {
         const memberProfiles = querySnapshot.docs.map(doc => doc.data() as UserProfile);
-
         setMembers(memberProfiles);
-      } catch (error) {
-          console.error("Error fetching members:", error);
-          toast({ variant: "destructive", title: "Error", description: "Failed to load group members." });
-      } finally {
         setLoadingMembers(false);
-      }
+      }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: 'users',
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setLoadingMembers(false);
+        toast({ variant: "destructive", title: "Error", description: "Failed to load group members." });
+      });
     };
 
     fetchMembers();
-  }, [group.members, toast]);
+  }, [group.members, toast, t]);
 
 
   return (
