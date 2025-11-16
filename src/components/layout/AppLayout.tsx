@@ -27,12 +27,16 @@ export default function AppLayout() {
     setCurrentView('welcome');
   }
 
+  const handleBack = () => {
+    setCurrentView('welcome');
+  }
+
   const renderContent = () => {
     switch (currentView) {
       case 'chat':
         return selectedGroupId ? <ChatView key={selectedGroupId} groupId={selectedGroupId} onGroupLeft={handleGroupLeft} /> : <Welcome />;
       case 'settings':
-        return <SettingsView />;
+        return <SettingsView onBack={handleBack} />;
       case 'welcome':
       default:
         return <Welcome />;

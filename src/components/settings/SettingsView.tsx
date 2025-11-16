@@ -30,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ArrowLeft } from 'lucide-react';
 
-export default function SettingsView() {
+export default function SettingsView({ onBack }: { onBack: () => void; }) {
   const { user, signOut, loading } = useAuth();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
@@ -101,7 +102,12 @@ export default function SettingsView() {
   return (
     <div className="flex-1 p-4 sm:p-6 md:p-8">
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-6 text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
+        <div className="relative mb-6 flex items-center">
+          <Button variant="ghost" size="icon" className="absolute -left-12" onClick={onBack}>
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
+        </div>
 
         <Card className="mb-8">
           <CardHeader>
