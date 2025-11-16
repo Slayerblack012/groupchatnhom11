@@ -64,7 +64,7 @@
   },
   "leaveGroupDialog": {
     "confirmTitle": "您确定吗？",
-    "confirmDescription": "您即将离开群组“{groupName}”。您将无法再看到此群组中的消息或参与其中。此操作无法撤消。",
+    "confirmDescription": "您即将离开群组“{groupName}”。您将无法再看到此群组中的消息或参与其中。此操作无法撤销。",
     "cancelButton": "取消",
     "leaveButton": "离开群组"
   },
@@ -82,7 +82,8 @@
     "edited": "已编辑",
     "cancelEdit": "取消",
     "saveEdit": "保存",
-    "pin": "置顶消息"
+    "pin": "置顶消息",
+    "react": "回应"
   },
   "welcome": {
     "title": "欢迎来到groupchat",

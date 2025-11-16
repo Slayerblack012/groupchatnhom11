@@ -31,4 +31,5 @@ export interface Message {
   senderPhotoURL: string | null;
   createdAt: Timestamp;
   editedAt?: Timestamp;
+  reactions?: { [emoji: string]: string[] }; // Map of emoji to array of user UIDs
 }

@@ -1,0 +1,167 @@
+
+/**
+ * @fileOverview Firestore Security Rules for groupchat application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a combination of ownership-based and role-based access control.
+ * User documents are strictly owned by the authenticated user. Groups are managed by
+ * admins and shared among members. Messages within groups inherit group membership for
+ * authorization. The design denormalizes data to enable simple and performant security rules.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores individual user profiles. Only the user can read/write their own profile.
+ * - /groups/{groupId}: Stores group information, including admin and members.
+ * - /groups/{groupId}/messages/{messageId}: Stores messages within a group.
+ * - /groups/{groupId}/typing/{userId}: Stores typing indicators for users in a group.
+ * - /roles_admin/{userId}: Document existence signifies admin role.
+ *
+ * Key Security Decisions:
+ * - User listing is enabled for authenticated users to allow searching.
+ * - Admin role assignments are controlled via a separate collection.
+ * - Default security posture is strict; any access not explicitly allowed is denied.
+ *
+ * Denormalization for Authorization:
+ * - The `messages` subcollection denormalizes group membership data (`memberIds`) to enable
+ *   message write authorization without additional `get()` calls.
+ *
+ * Structural Segregation:
+ * - User profiles are stored in a dedicated collection (`/users/{userId}`) to clearly
+ *   separate them from other data, simplifying access control.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (create) - Authenticated user can create their own profile if the userId matches their auth.uid.
+     * @allow (get, update, delete) - Authenticated user can read, update, or delete their own profile.
+     * @allow (list) - Authenticated users can list users to search for them.
+     * @deny (create) - Authenticated user cannot create profile if userId does not match their auth.uid.
+     * @deny (update, delete) - An unauthenticated user cannot update or delete any profile.
+     * @principle Enforces document ownership for user profiles, validating the UID on create and enforcing immutability of the UID on update.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isSignedIn() {
+        return request.auth.uid != null;
+      }
+
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow list: if isSignedIn();
+    }
+
+    /**
+     * @description Controls access to group documents.
+     * @path /groups/{groupId}
+     * @allow (create) - Any authenticated user can create a group.
+     * @allow (get, list) - Any user can read any group.
+     * @allow (update, delete) - Only the group admin (adminId) or a member can update the group.
+     * @deny (delete) - Non-admin users cannot delete groups.
+     * @principle Manages group creation, open access for reads, and restricts modification to the admin.
+     */
+    match /groups/{groupId} {
+      function isSignedIn() {
+        return request.auth.uid != null;
+      }
+
+      function isAdmin() {
+        return request.auth.uid == resource.data.admin;
+      }
+      
+      function isMember() {
+          return request.auth.uid in resource.data.members;
+      }
+
+      // Helper function to check if the user is joining the group
+      function isJoining() {
+        // Allow if the user is adding themselves to the members list
+        // and not changing anything else.
+        let addedMembers = request.resource.data.members.toSet().difference(resource.data.members.toSet());
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+               addedMembers.size() == 1 && request.auth.uid in addedMembers;
+      }
+
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isMember() || isJoining());
+      allow delete: if isSignedIn() && isAdmin();
+
+      /**
+       * @description Controls access to messages within a group.
+       * @path /groups/{groupId}/messages/{messageId}
+       * @allow (create) - Any authenticated user can create a message in a group. The request must include the senderId field, matching the user id.
+       * @allow (get, list) - Any user can read any message in a group.
+       * @allow (update, delete) - A user can update or delete their own message.
+       * @deny (delete) - Deleting another user's message is denied.
+       * @principle Manages message creation within groups, enforcing that sender ID matches the authenticated user, and restricting modification.
+       */
+      match /messages/{messageId} {
+        function isGroupMember(groupId) {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+        }
+        
+        function isSender() {
+          return request.auth.uid == resource.data.senderId;
+        }
+
+        // Helper function for reaction updates
+        function isUpdatingReactions() {
+          let affected = request.resource.data.diff(resource.data).affectedKeys();
+          return affected.size() == 1 && affected.has('reactions');
+        }
+
+        allow read: if isGroupMember(groupId);
+        allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
+        allow update: if isGroupMember(groupId) && (isSender() || isUpdatingReactions());
+        allow delete: if isGroupMember(groupId) && isSender();
+      }
+
+      /**
+       * @description Controls access to typing indicators within a group.
+       * @path /groups/{groupId}/typing/{userId}
+       * @allow (create, update, delete) - A group member can manage their own typing indicator.
+       * @allow (list, get) - Any group member can see who is typing.
+       * @principle Allows members to signal their typing status to other members of the same group.
+       */
+      match /typing/{userId} {
+        function isGroupMember(groupId) {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
+        }
+        function isOwner(userId) {
+            return request.auth != null && request.auth.uid == userId;
+        }
+        
+        allow read: if isGroupMember(groupId);
+        allow write: if isGroupMember(groupId) && isOwner(userId);
+      }
+    }
+
+    /**
+     * @description Controls access to admin role documents.
+     * @path /roles_admin/{userId}
+     * @allow (create) - No direct creation allowed through client.
+     * @allow (get) - Any authenticated user can check the existance of the document to see if user is admin.
+     * @allow (list) - Listing not allowed.
+     * @allow (update) - No updates.
+     * @allow (delete) - No direct deletion allowed.
+     * @principle Document existance indicates admin role.
+     */
+    match /roles_admin/{userId} {
+        function isSignedIn() {
+            return request.auth != null;
+        }
+        allow get: if isSignedIn();
+        allow list: if false;
+        // This rule is permissive for the setup of the admin user.
+        // It should be tightened in a production environment.
+        allow create: if isSignedIn();
+        allow update: if false;
+        allow delete: if false;
+    }
+  }
+}

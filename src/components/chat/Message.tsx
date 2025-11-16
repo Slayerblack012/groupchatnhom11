@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
-import { File, MoreHorizontal, Pencil, Trash2, Pin } from "lucide-react";
+import { File, MoreHorizontal, Pencil, Trash2, Pin, Smile } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -18,12 +18,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { doc, updateDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAuth } from '@/providers/auth-provider';
 
 interface MessageProps {
   message: MessageType;
@@ -83,8 +85,11 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
     }
 };
 
+const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
 export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const isCurrentUser = message.senderId === currentUserId;
   const isGroupAdmin = currentUserId === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
@@ -153,6 +158,31 @@ export default function Message({ message, group, currentUserId, senderProfile }
       });
   };
 
+  const handleReaction = (emoji: string) => {
+    if (!user) return;
+
+    const messageRef = doc(db, "groups", message.groupId, "messages", message.id);
+    const reactionKey = `reactions.${emoji}`;
+    const userHasReacted = message.reactions?.[emoji]?.includes(user.uid);
+
+    let updateData;
+    if (userHasReacted) {
+      updateData = { [reactionKey]: arrayRemove(user.uid) };
+    } else {
+      updateData = { [reactionKey]: arrayUnion(user.uid) };
+    }
+
+    updateDoc(messageRef, updateData)
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: messageRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
 
   return (
     <div
@@ -177,7 +207,7 @@ export default function Message({ message, group, currentUserId, senderProfile }
             <div className={cn("flex items-center gap-2", isCurrentUser ? "flex-row-reverse" : "flex-row")}>
                  <Card
                     className={cn(
-                        "rounded-2xl",
+                        "rounded-2xl relative",
                         isCurrentUser
                         ? "rounded-tr-none bg-primary text-primary-foreground"
                         : "rounded-tl-none bg-muted"
@@ -200,40 +230,84 @@ export default function Message({ message, group, currentUserId, senderProfile }
                             renderContent(message, t)
                         )}
                     </CardContent>
+                    {message.reactions && Object.keys(message.reactions).length > 0 && (
+                        <div className={cn(
+                            "absolute -bottom-4 flex gap-1",
+                            isCurrentUser ? "right-2" : "left-2"
+                        )}>
+                            {Object.entries(message.reactions).filter(([, uids]) => uids.length > 0).map(([emoji, uids]) => (
+                                <button
+                                    key={emoji}
+                                    onClick={() => handleReaction(emoji)}
+                                    className={cn(
+                                        "rounded-full border bg-background px-2 py-0.5 text-xs shadow-sm flex items-center gap-1",
+                                        uids.includes(currentUserId) ? "border-primary bg-primary/10" : "border-border"
+                                    )}
+                                >
+                                    <span>{emoji}</span>
+                                    <span>{uids.length}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </Card>
                 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                       <DropdownMenuItem onClick={handlePinMessage}>
-                            <Pin className="mr-2 h-4 w-4" />
-                            <span>{t('message.pin')}</span>
-                        </DropdownMenuItem>
-                        {isCurrentUser && (
-                          <>
-                            <DropdownMenuSeparator />
-                            {message.contentType === 'text' && (
-                                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    <span>{t('message.edit')}</span>
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>{t('message.delete')}</span>
+                <div className="opacity-0 group-hover:opacity-100 flex items-center">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Smile className="h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-1">
+                            <div className="flex gap-1">
+                                {COMMON_REACTIONS.map(emoji => (
+                                    <Button
+                                        key={emoji}
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleReaction(emoji)}
+                                        className="text-lg"
+                                    >
+                                        {emoji}
+                                    </Button>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                        <DropdownMenuItem onClick={handlePinMessage}>
+                                <Pin className="mr-2 h-4 w-4" />
+                                <span>{t('message.pin')}</span>
                             </DropdownMenuItem>
-                          </>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                
+                            {isCurrentUser && (
+                            <>
+                                <DropdownMenuSeparator />
+                                {message.contentType === 'text' && (
+                                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        <span>{t('message.edit')}</span>
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>{t('message.delete')}</span>
+                                </DropdownMenuItem>
+                            </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
            
-            <div className="text-xs text-muted-foreground">
+            <div className={cn("pt-5 text-xs text-muted-foreground", message.reactions && Object.keys(message.reactions).length > 0 ? "pt-5" : "pt-1")}>
             <span className="font-medium">
                 {isCurrentUser ? t('message.you') : senderName}
             </span>

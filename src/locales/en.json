@@ -82,7 +82,8 @@
     "edited": "edited",
     "cancelEdit": "Cancel",
     "saveEdit": "Save",
-    "pin": "Pin Message"
+    "pin": "Pin Message",
+    "react": "React"
   },
   "welcome": {
     "title": "Welcome to groupchat",

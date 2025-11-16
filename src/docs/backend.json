@@ -1,0 +1,212 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the groupchat application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user. This is the Firebase UID.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        },
+        "fcmTokens": {
+          "type": "array",
+          "description": "Array of Firebase Cloud Messaging tokens for push notifications.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Group": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Group",
+      "type": "object",
+      "description": "Represents a chat group.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the group.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the group."
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Group). The user ID of the group administrator."
+        },
+        "memberIds": {
+          "type": "array",
+          "description": "References to Users. (Relationship: Group 1:N User) Array of user IDs that are members of this group.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the group's avatar picture.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "adminId"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a message within a group chat.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the message.",
+          "format": "uuid"
+        },
+        "groupId": {
+          "type": "string",
+          "description": "Reference to Group. (Relationship: Group 1:N Message). The ID of the group this message belongs to."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Message). The ID of the user who sent the message."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the message (text or URL for files/images)."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of when the message was sent.",
+          "format": "date-time"
+        },
+        "contentType": {
+          "type": "string",
+          "description": "The content Type of the message. Values can be 'text', 'image', 'file'.",
+          "format": "string"
+        },
+        "reactions": {
+          "type": "object",
+          "description": "A map of emoji reactions to a list of user IDs who reacted.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "groupId",
+        "senderId",
+        "content",
+        "timestamp"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Uses path-based ownership, so only the user can read/write their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}",
+        "definition": {
+          "entityName": "Group",
+          "schema": {
+            "$ref": "#/backend/entities/Group"
+          },
+          "description": "Stores group information, including name, adminId, and memberIds.",
+          "params": [
+            {
+              "name": "groupId",
+              "description": "Unique identifier for the group."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages within a group. Includes denormalized 'groupId', 'senderId', 'memberIds' (copied from the parent Group document) for authorization independence.",
+          "params": [
+            {
+              "name": "groupId",
+              "description": "The ID of the group the message belongs to."
+            },
+            {
+              "name": "messageId",
+              "description": "Unique identifier for the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "adminRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Document existence indicates admin role for the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support a real-time group chat application (groupchat) with a focus on secure access control and efficient data retrieval. It leverages path-based ownership for user data and a membership map for group authorization. To ensure Authorization Independence, key authorization data (adminId and memberIds) from the `Group` document is denormalized to the `Message` documents. This eliminates the need for `get()` calls in security rules when writing messages. This strategy ensures atomic operations and simplifies security rule logic. Furthermore, separate collections for user profiles, groups, and messages ensure a clear separation of concerns and enable secure `list` operations.\n\nThe structure also takes into consideration the app requirements of push notifications and scalable data models. Segregation by path enables scalable queries and optimized read operations."
+  }
+}
