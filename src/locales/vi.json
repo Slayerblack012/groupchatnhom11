@@ -60,13 +60,21 @@
     "member": "Thành viên",
     "viewMembers": "Xem thành viên",
     "membersListTitle": "Thành viên nhóm",
-    "membersListDescription": "Có {count} thành viên trong '{groupName}'."
+    "membersListDescription": "Có {count} thành viên trong '{groupName}'.",
+    "dangerZone": "Vùng nguy hiểm",
+    "deleteGroupButton": "Xóa Nhóm"
   },
   "leaveGroupDialog": {
     "confirmTitle": "Bạn có chắc chắn không?",
     "confirmDescription": "Bạn sắp rời khỏi nhóm \"{groupName}\". Bạn sẽ không thể xem tin nhắn hoặc tham gia vào nhóm này nữa. Hành động này không thể hoàn tác.",
     "cancelButton": "Hủy",
     "leaveButton": "Rời khỏi nhóm"
+  },
+  "deleteGroupDialog": {
+    "title": "Bạn có chắc chắn không?",
+    "description": "Hành động này sẽ xóa vĩnh viễn nhóm '{groupName}' và tất cả tin nhắn trong đó cho mọi người. Hành động này không thể hoàn tác.",
+    "cancelButton": "Hủy",
+    "confirmButton": "Có, xóa nhóm"
   },
   "messageInput": {
     "placeholder": "Nhập tin nhắn...",
@@ -118,6 +126,7 @@
     "groupLeftSuccess": "Bạn đã rời khỏi nhóm: {groupName}",
     "leaveGroupError": "Không thể rời khỏi nhóm.",
     "userNotFound": "Không tìm thấy người dùng.",
+    "userSearchError": "Không thể tìm kiếm người dùng.",
     "userAlreadyInGroup": "Người dùng đã ở trong nhóm.",
     "memberAdded": "{displayName} đã được thêm vào nhóm.",
     "addMemberError": "Không thể thêm thành viên.",
@@ -131,6 +140,7 @@
     "fileSendError": "Không thể gửi tệp.",
     "processFileError": "Không thể xử lý tệp.",
     "fetchGroupsError": "Không thể tìm nạp các nhóm của bạn.",
+    "fetchMembersError": "Không thể tải thành viên nhóm.",
     "groupIdCopied": "ID nhóm đã được sao chép vào khay nhớ tạm.",
     "groupCreateError": "Không thể tạo nhóm. Vui lòng thử lại.",
     "groupNotFound": "Không có nhóm nào tồn tại với ID đó.",
@@ -143,9 +153,17 @@
     "notificationPermissionDenied": "Quyền thông báo bị từ chối.",
     "notificationPermissionDeniedDesc": "Bạn đã chặn thông báo. Vui lòng bật chúng trong cài đặt trình duyệt của bạn.",
     "enableNotificationsError": "Không thể bật thông báo.",
-    "notificationsDisabled": "Thông báo bị vô hiệu hóa cục bộ. Lưu ý: Máy chủ vẫn có thể gửi thông báo đẩy cho đến khi mã thông báo hết hạn."
+    "notificationsDisabled": "Thông báo bị vô hiệu hóa cục bộ. Lưu ý: Máy chủ vẫn có thể gửi thông báo đẩy cho đến khi mã thông báo hết hạn.",
+    "success": "Thành công",
+    "groupNameUpdated": "Đã cập nhật tên nhóm.",
+    "groupAvatarUpdated": "Đã cập nhật ảnh đại diện nhóm.",
+    "avatarUpdateError": "Không thể cập nhật ảnh đại diện.",
+    "groupDeleted": "Nhóm '{groupName}' đã bị xóa.",
+    "deleteGroupError": "Không thể xóa nhóm."
   },
   "typingIndicator": {
     "isTyping": "{names} đang gõ..."
   }
 }
+
+    

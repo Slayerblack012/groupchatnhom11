@@ -16,6 +16,7 @@ import {
   startAt,
   endAt,
   orderBy,
+  deleteDoc,
 } from "firebase/firestore";
 import {
     ref,
@@ -33,6 +34,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,6 +74,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
   const [groupName, setGroupName] = useState(group.name);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openSheet, setOpenSheet] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
   const isAdmin = currentUser?.uid === group.admin;
@@ -78,8 +91,8 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
       try {
         const memberProfiles: UserProfile[] = [];
         const memberChunks: string[][] = [];
-        for (let i = 0; i < group.members.length; i += 10) {
-            memberChunks.push(group.members.slice(i, i + 10));
+        for (let i = 0; i < group.members.length; i += 30) {
+            memberChunks.push(group.members.slice(i, i + 30));
         }
 
         for (const chunk of memberChunks) {
@@ -93,14 +106,15 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
         setMembers(memberProfiles);
       } catch (error) {
           console.error("Error fetching members:", error);
-          toast({ variant: "destructive", title: "Error", description: "Failed to load group members." });
+          toast({ variant: "destructive", title: "Error", description: t('toasts.fetchMembersError') });
       } finally {
         setLoadingMembers(false);
       }
     };
-
-    fetchMembers();
-  }, [group.members, toast]);
+    if (openSheet) {
+      fetchMembers();
+    }
+  }, [group.members, toast, openSheet]);
 
   useEffect(() => {
     const searchUsers = async () => {
@@ -114,8 +128,8 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             const q = query(
                 usersRef, 
                 orderBy("email"), 
-                startAt(searchQuery), 
-                endAt(searchQuery + '\uf8ff'),
+                startAt(searchQuery.toLowerCase()), 
+                endAt(searchQuery.toLowerCase() + '\uf8ff'),
                 limit(10)
             );
             const querySnapshot = await getDocs(q);
@@ -123,18 +137,20 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             setSearchResults(users.filter(u => u.uid !== currentUser?.uid));
         } catch (error) {
             console.error("Error searching users:", error);
-            toast({ variant: "destructive", title: "Error", description: "Failed to search for users." });
+            toast({ variant: "destructive", title: "Error", description: t('toasts.userSearchError') });
         } finally {
             setIsSearching(false);
         }
     };
 
     const debounceTimer = setTimeout(() => {
+      if (openSheet) {
         searchUsers();
+      }
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-}, [searchQuery, currentUser?.uid, toast]);
+}, [searchQuery, currentUser?.uid, toast, openSheet]);
 
 
   const handleAddMember = async (userToAdd: UserProfile) => {
@@ -152,7 +168,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
           setMembers(prev => [...prev, userToAdd]);
           setSearchQuery("");
           setSearchResults([]);
-          toast({ title: "Success", description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
+          toast({ title: t('toasts.success'), description: t('toasts.memberAdded', { displayName: userToAdd.displayName || 'user' }) });
         })
         .catch(error => {
           const permissionError = new FirestorePermissionError({
@@ -177,7 +193,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
       .then(() => {
         setGroup(prev => ({ ...prev, members: prev.members.filter(id => id !== memberId)}));
         setMembers(prev => prev.filter(m => m.uid !== memberId));
-        toast({ title: "Success", description: t('toasts.memberRemoved') });
+        toast({ title: t('toasts.success'), description: t('toasts.memberRemoved') });
       })
       .catch(error => {
         const permissionError = new FirestorePermissionError({
@@ -205,7 +221,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     const updateData = { name: groupName.trim() };
     try {
         await updateDoc(groupRef, updateData);
-        toast({ title: "Success", description: "Group name updated." });
+        toast({ title: t('toasts.success'), description: t('toasts.groupNameUpdated') });
     } catch (error) {
         console.error("Error updating group name:", error);
         const permissionError = new FirestorePermissionError({
@@ -241,7 +257,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
                 updateDoc(groupRef, updateData)
                   .then(() => {
                     setGroup(prev => ({ ...prev, photoURL: downloadURL }));
-                    toast({ title: "Success", description: "Group avatar updated."});
+                    toast({ title: t('toasts.success'), description: t('toasts.groupAvatarUpdated')});
                     setIsUploading(false);
                   }).catch(error => {
                      const permissionError = new FirestorePermissionError({
@@ -256,14 +272,34 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
         );
     } catch (error) {
         console.error("Error handling avatar change:", error);
-        toast({ variant: "destructive", title: "Error", description: "Failed to update avatar." });
+        toast({ variant: "destructive", title: "Error", description: t('toasts.avatarUpdateError') });
         setIsUploading(false);
+    }
+  };
+
+ const handleDeleteGroup = async () => {
+    const groupRef = doc(db, "groups", group.id);
+    try {
+      await deleteDoc(groupRef);
+      toast({
+        title: t('toasts.success'),
+        description: t('toasts.groupDeleted', { groupName: group.name }),
+      });
+      setOpenSheet(false);
+      // The onGroupLeft prop will be triggered by ChatView's listener
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      const permissionError = new FirestorePermissionError({
+        path: groupRef.path,
+        operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
     }
   };
 
 
   return (
-    <Sheet>
+    <Sheet open={openSheet} onOpenChange={setOpenSheet}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon">
           <Settings className="h-5 w-5" />
@@ -387,7 +423,41 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
             </div>
           </ScrollArea>
         </div>
+
+        {isAdmin && (
+          <>
+            <Separator />
+            <div className="py-4">
+              <h3 className="mb-2 text-sm font-semibold text-destructive">
+                {t('memberManagement.dangerZone')}
+              </h3>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    {t('memberManagement.deleteGroupButton')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('deleteGroupDialog.title')}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t('deleteGroupDialog.description', { groupName: group.name })}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t('deleteGroupDialog.cancelButton')}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteGroup}>
+                      {t('deleteGroupDialog.confirmButton')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );
 }
+
+    

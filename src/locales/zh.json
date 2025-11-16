@@ -60,13 +60,21 @@
     "member": "成员",
     "viewMembers": "查看成员",
     "membersListTitle": "群组成员",
-    "membersListDescription": "'{groupName}'中有 {count} 名成员。"
+    "membersListDescription": "'{groupName}'中有 {count} 名成员。",
+    "dangerZone": "危险区域",
+    "deleteGroupButton": "删除群组"
   },
   "leaveGroupDialog": {
     "confirmTitle": "您确定吗？",
     "confirmDescription": "您即将离开群组“{groupName}”。您将无法再看到此群组中的消息或参与其中。此操作无法撤销。",
     "cancelButton": "取消",
     "leaveButton": "离开群组"
+  },
+  "deleteGroupDialog": {
+    "title": "您确定吗？",
+    "description": "这将永久删除群组“{groupName}”及其所有消息，对所有人均有效。此操作无法撤销。",
+    "cancelButton": "取消",
+    "confirmButton": "是的，删除群组"
   },
   "messageInput": {
     "placeholder": "输入消息...",
@@ -118,6 +126,7 @@
     "groupLeftSuccess": "您已离开群组：{groupName}",
     "leaveGroupError": "离开群组失败。",
     "userNotFound": "未找到用户。",
+    "userSearchError": "搜索用户失败。",
     "userAlreadyInGroup": "用户已在群组中。",
     "memberAdded": "{displayName} 已添加到群组。",
     "addMemberError": "添加成员失败。",
@@ -131,6 +140,7 @@
     "fileSendError": "发送文件失败。",
     "processFileError": "无法处理文件。",
     "fetchGroupsError": "无法获取您的群组。",
+    "fetchMembersError": "加载群组成员失败。",
     "groupIdCopied": "群组ID已复制到剪贴板。",
     "groupCreateError": "创建群组失败。请重试。",
     "groupNotFound": "不存在具有该ID的群组。",
@@ -143,9 +153,17 @@
     "notificationPermissionDenied": "通知权限被拒绝。",
     "notificationPermissionDeniedDesc": "您已阻止通知。请在您的浏览器设置中启用它们。",
     "enableNotificationsError": "启用通知失败。",
-    "notificationsDisabled": "通知已在本地禁用。注意：服务器可能仍会发送推送，直到令牌过期。"
+    "notificationsDisabled": "通知已在本地禁用。注意：服务器可能仍会发送推送，直到令牌过期。",
+    "success": "成功",
+    "groupNameUpdated": "群组名称已更新。",
+    "groupAvatarUpdated": "群组头像已更新。",
+    "avatarUpdateError": "更新头像失败。",
+    "groupDeleted": "群组“{groupName}”已被删除。",
+    "deleteGroupError": "删除群组失败。"
   },
   "typingIndicator": {
     "isTyping": "{names} 正在输入..."
   }
 }
+
+    

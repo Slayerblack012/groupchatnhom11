@@ -60,13 +60,21 @@
     "member": "Member",
     "viewMembers": "View Members",
     "membersListTitle": "Group Members",
-    "membersListDescription": "There are {count} members in '{groupName}'."
+    "membersListDescription": "There are {count} members in '{groupName}'.",
+    "dangerZone": "Danger Zone",
+    "deleteGroupButton": "Delete Group"
   },
   "leaveGroupDialog": {
     "confirmTitle": "Are you absolutely sure?",
     "confirmDescription": "You are about to leave the group \"{groupName}\". You will no longer be able to see messages or participate in this group. This action cannot be undone.",
     "cancelButton": "Cancel",
     "leaveButton": "Leave Group"
+  },
+  "deleteGroupDialog": {
+    "title": "Are you absolutely sure?",
+    "description": "This will permanently delete the group '{groupName}' and all of its messages for everyone. This action cannot be undone.",
+    "cancelButton": "Cancel",
+    "confirmButton": "Yes, delete group"
   },
   "messageInput": {
     "placeholder": "Type a message...",
@@ -118,6 +126,7 @@
     "groupLeftSuccess": "You have left the group: {groupName}",
     "leaveGroupError": "Failed to leave group.",
     "userNotFound": "User not found.",
+    "userSearchError": "Failed to search for users.",
     "userAlreadyInGroup": "User is already in the group.",
     "memberAdded": "{displayName} added to the group.",
     "addMemberError": "Failed to add member.",
@@ -131,6 +140,7 @@
     "fileSendError": "Failed to send file.",
     "processFileError": "Could not process file.",
     "fetchGroupsError": "Could not fetch your groups.",
+    "fetchMembersError": "Failed to load group members.",
     "groupIdCopied": "Group ID copied to clipboard.",
     "groupCreateError": "Failed to create group. Please try again.",
     "groupNotFound": "No group exists with that ID.",
@@ -143,9 +153,17 @@
     "notificationPermissionDenied": "Notification permission denied.",
     "notificationPermissionDeniedDesc": "You have blocked notifications. Please enable them in your browser settings.",
     "enableNotificationsError": "Failed to enable notifications.",
-    "notificationsDisabled": "Notifications disabled locally. Note: Server may still send pushes until token expires."
+    "notificationsDisabled": "Notifications disabled locally. Note: Server may still send pushes until token expires.",
+    "success": "Success",
+    "groupNameUpdated": "Group name updated.",
+    "groupAvatarUpdated": "Group avatar updated.",
+    "avatarUpdateError": "Failed to update avatar.",
+    "groupDeleted": "Group '{groupName}' has been deleted.",
+    "deleteGroupError": "Failed to delete group."
   },
   "typingIndicator": {
     "isTyping": "{names} is typing..."
   }
 }
+
+    
