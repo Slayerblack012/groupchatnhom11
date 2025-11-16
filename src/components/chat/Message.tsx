@@ -85,7 +85,7 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
     }
 };
 
-const COMMON_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const COMMON_REACTIONS = ['😂', '❤️', '🔥', '👍', '😭', '😮'];
 
 export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
@@ -324,3 +324,5 @@ export default function Message({ message, group, currentUserId, senderProfile }
     </div>
   );
 }
+
+    
