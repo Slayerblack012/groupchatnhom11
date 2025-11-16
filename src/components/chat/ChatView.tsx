@@ -191,7 +191,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
                 </div>
             ) : (
                 messages.map((message) => (
-                    <Message key={message.id} message={{...message, groupId: group.id}} group={group} currentUserId={user.uid} senderProfile={members[message.senderId]}/>
+                    <Message key={message.id} message={{...message, groupId: group.id}} group={group} currentUserId={user.uid} senderProfile={members[message.senderId]} members={members}/>
                 ))
             )}
         </div>

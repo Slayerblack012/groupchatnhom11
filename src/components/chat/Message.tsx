@@ -26,12 +26,14 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from '@/providers/auth-provider';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MessageProps {
   message: MessageType;
   group: Group;
   currentUserId: string;
   senderProfile?: UserProfile;
+  members: Record<string, UserProfile>;
 }
 
 const renderContent = (message: MessageType, t: (key: string) => string) => {
@@ -87,7 +89,7 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
 
 const COMMON_REACTIONS = ['😂', '❤️', '🔥', '👍', '😭', '😮'];
 
-export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
+export default function Message({ message, group, currentUserId, senderProfile, members }: MessageProps) {
   const { t } = useLanguage();
   const { user } = useAuth();
   const isCurrentUser = message.senderId === currentUserId;
@@ -232,23 +234,33 @@ export default function Message({ message, group, currentUserId, senderProfile }
                         )}
                     </CardContent>
                     {message.reactions && Object.keys(message.reactions).length > 0 && (
-                        <div className={cn(
+                         <div className={cn(
                             "absolute -bottom-4 flex gap-1",
                             isCurrentUser ? "right-2" : "left-2"
                         )}>
-                            {Object.entries(message.reactions).filter(([, uids]) => uids.length > 0).map(([emoji, uids]) => (
-                                <button
-                                    key={emoji}
-                                    onClick={() => handleReaction(emoji)}
-                                    className={cn(
-                                        "rounded-full border bg-background px-2 py-0.5 text-xs shadow-sm flex items-center gap-1",
-                                        uids.includes(currentUserId) ? "border-primary bg-primary/10" : "border-border"
-                                    )}
-                                >
-                                    <span>{emoji}</span>
-                                    <span>{uids.length}</span>
-                                </button>
-                            ))}
+                            <TooltipProvider>
+                                {Object.entries(message.reactions).filter(([, uids]) => uids && uids.length > 0).map(([emoji, uids]) => (
+                                    <Tooltip key={emoji}>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                onClick={() => handleReaction(emoji)}
+                                                className={cn(
+                                                    "rounded-full border bg-background px-2 py-0.5 text-xs shadow-sm flex items-center gap-1",
+                                                    uids.includes(currentUserId) ? "border-primary bg-primary/10" : "border-border"
+                                                )}
+                                            >
+                                                <span>{emoji}</span>
+                                                <span>{uids.length}</span>
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <div className='text-xs max-w-xs'>
+                                                {uids.map(uid => members[uid]?.displayName || '...').join(', ')}
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ))}
+                            </TooltipProvider>
                         </div>
                     )}
                 </Card>
@@ -289,12 +301,12 @@ export default function Message({ message, group, currentUserId, senderProfile }
                                 <span>{t('message.pin')}</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {message.contentType === 'text' && (
-                                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    <span>{t('message.edit')}</span>
-                                </DropdownMenuItem>
-                            )}
+                            
+                            <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>{t('message.edit')}</span>
+                            </DropdownMenuItem>
+                            
                             <DropdownMenuItem onClick={handleDeleteMessage} className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>{t('message.delete')}</span>
