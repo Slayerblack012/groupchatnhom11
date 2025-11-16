@@ -46,7 +46,9 @@
     "members": "成员",
     "member": "成员",
     "manageMembers": "管理成员",
-    "leaveGroup": "离开群组"
+    "leaveGroup": "离开群组",
+    "pinnedMessage": "已置顶消息",
+    "unpin": "取消置顶"
   },
   "memberManagement": {
     "title": "管理成员",
@@ -79,7 +81,8 @@
     "delete": "删除消息",
     "edited": "已编辑",
     "cancelEdit": "取消",
-    "saveEdit": "保存"
+    "saveEdit": "保存",
+    "pin": "置顶消息"
   },
   "welcome": {
     "title": "欢迎来到groupchat",

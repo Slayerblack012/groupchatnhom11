@@ -46,7 +46,9 @@
     "members": "thành viên",
     "member": "thành viên",
     "manageMembers": "Quản lý thành viên",
-    "leaveGroup": "Rời khỏi nhóm"
+    "leaveGroup": "Rời khỏi nhóm",
+    "pinnedMessage": "Tin nhắn đã ghim",
+    "unpin": "Bỏ ghim"
   },
   "memberManagement": {
     "title": "Quản lý thành viên",
@@ -79,7 +81,8 @@
     "delete": "Xóa tin nhắn",
     "edited": "đã chỉnh sửa",
     "cancelEdit": "Hủy",
-    "saveEdit": "Lưu"
+    "saveEdit": "Lưu",
+    "pin": "Ghim tin nhắn"
   },
   "welcome": {
     "title": "Chào mừng đến với groupchat",

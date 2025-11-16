@@ -3,12 +3,12 @@
 
 import React, { useState } from 'react';
 import { cn } from "@/lib/utils";
-import type { Message as MessageType, UserProfile } from "@/types";
+import type { Message as MessageType, UserProfile, Group } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import Image from "next/image";
-import { File, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { File, MoreHorizontal, Pencil, Trash2, Pin } from "lucide-react";
 import { useLanguage } from "@/providers/language-provider";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -24,9 +24,11 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useAuth } from '@/providers/auth-provider';
 
 interface MessageProps {
   message: MessageType;
+  group: Group;
   currentUserId: string;
   senderProfile?: UserProfile;
 }
@@ -82,9 +84,11 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
     }
 };
 
-export default function Message({ message, currentUserId, senderProfile }: MessageProps) {
+export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const isCurrentUser = message.senderId === currentUserId;
+  const isAdmin = user?.uid === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
   const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
   const [isEditing, setIsEditing] = useState(false);
@@ -130,6 +134,22 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
         });
   };
 
+  const handlePinMessage = async () => {
+    const groupRef = doc(db, "groups", group.id);
+    const updateData = {
+      pinnedMessage: message,
+    };
+    updateDoc(groupRef, updateData)
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: groupRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+  };
+
 
   return (
     <div
@@ -137,6 +157,7 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
         "group flex animate-message-in items-start gap-3",
         isCurrentUser ? "flex-row-reverse" : "flex-row"
       )}
+      id={`message-${message.id}`}
     >
         <Avatar className="h-8 w-8">
             <AvatarImage src={senderPhotoURL || undefined} alt={senderName || undefined} />
@@ -177,14 +198,23 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
                         )}
                     </CardContent>
                 </Card>
-                {canInteract && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
+                
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        {isAdmin && (
+                            <DropdownMenuItem onClick={handlePinMessage}>
+                                <Pin className="mr-2 h-4 w-4" />
+                                <span>{t('message.pin')}</span>
+                            </DropdownMenuItem>
+                        )}
+                        {canInteract && (
+                          <>
+                            {isAdmin && <DropdownMenuSeparator />}
                             {message.contentType === 'text' && (
                                 <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                     <Pencil className="mr-2 h-4 w-4" />
@@ -195,9 +225,11 @@ export default function Message({ message, currentUserId, senderProfile }: Messa
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 <span>{t('message.delete')}</span>
                             </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                          </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                
             </div>
            
             <div className="text-xs text-muted-foreground">

@@ -16,6 +16,7 @@ export interface Group {
   members: string[];
   createdAt: Timestamp;
   photoURL?: string;
+  pinnedMessage?: Message | null;
 }
 
 export interface Message {

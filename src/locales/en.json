@@ -46,7 +46,9 @@
     "members": "members",
     "member": "member",
     "manageMembers": "Manage Members",
-    "leaveGroup": "Leave Group"
+    "leaveGroup": "Leave Group",
+    "pinnedMessage": "Pinned Message",
+    "unpin": "Unpin"
   },
   "memberManagement": {
     "title": "Manage Members",
@@ -79,7 +81,8 @@
     "delete": "Delete Message",
     "edited": "edited",
     "cancelEdit": "Cancel",
-    "saveEdit": "Save"
+    "saveEdit": "Save",
+    "pin": "Pin Message"
   },
   "welcome": {
     "title": "Welcome to groupchat",
