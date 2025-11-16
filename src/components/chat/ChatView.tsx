@@ -11,6 +11,7 @@ import {
   getDocs,
   where,
   getDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Message as MessageType, Group, UserProfile } from "@/types";
@@ -21,7 +22,6 @@ import Message from "@/components/chat/Message";
 import MessageInput from "@/components/chat/MessageInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 import TypingIndicator from "./TypingIndicator";
-import { Timestamp } from "firebase/firestore";
 
 interface TypingUser {
   name: string;
@@ -107,6 +107,9 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
     const fetchMemberData = async () => {
       if (!group || group.members.length === 0) return;
       
+      const memberIds = group.members.filter(id => !members[id]);
+      if (memberIds.length === 0) return;
+      
       try {
         const usersRef = collection(db, 'users');
         const q = query(usersRef, where('uid', 'in', group.members));
@@ -116,13 +119,13 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
             const userData = doc.data() as UserProfile;
             memberData[userData.uid] = userData;
         });
-        setMembers(memberData);
+        setMembers(prev => ({...prev, ...memberData}));
       } catch (error) {
         console.error("Error fetching member data:", error);
       }
     };
     fetchMemberData();
-  }, [group]);
+  }, [group, members]);
 
 
   if (loading || !user || !group) {
@@ -131,13 +134,29 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
         <div className="flex items-center p-4 border-b">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="ml-4 space-y-2">
-            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-20" />
           </div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-12 w-1/2 ml-auto" />
-            <Skeleton className="h-12 w-2/3" />
+        <div className="flex-1 p-4 space-y-6">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-64" />
+              </div>
+            </div>
+            <div className="flex flex-row-reverse items-start gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-80" />
+              </div>
+            </div>
         </div>
       </div>
     );
