@@ -33,7 +33,7 @@ interface ChatHeaderProps {
 export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const isMember = user ? group.members.includes(user.uid) : false;
+  const isAdmin = user?.uid === group.admin;
 
   const handleUnpinMessage = () => {
     const groupRef = doc(db, "groups", group.id);
@@ -76,7 +76,7 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
         </div>
         <div className="flex items-center gap-2">
            <ViewMembersSheet group={group} />
-          {isMember && <MemberManagementSheet group={group} />}
+          {isAdmin && <MemberManagementSheet group={group} />}
           <LeaveGroupDialog group={group} onLeave={onGroupLeft} />
         </div>
       </div>

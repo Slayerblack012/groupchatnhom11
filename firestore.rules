@@ -85,23 +85,15 @@ service cloud.firestore {
                addedMembers.size() == 1 && request.auth.uid in addedMembers;
       }
       
-      // Helper function to check if the user is a member managing other members
-      function isManagingMembers() {
-        // Allow members to only change the 'members' field
-        return isMember() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']);
-      }
-      
-      // Helper function for admin managing other fields
       function isAdminManaging() {
-        // Admin can change name, photoURL, and members
-        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photoURL', 'members', 'pinnedMessage', 'lastRead']);
+        return isAdmin();
       }
 
       allow get: if isSignedIn();
       allow list: if isMember();
       allow create: if isSignedIn();
-      // Allow updates if user is joining, an admin is managing, or a member is managing members.
-      allow update: if isSignedIn() && (isJoining() || isAdminManaging() || isManagingMembers());
+      // Allow updates if user is joining or an admin is managing.
+      allow update: if isSignedIn() && (isJoining() || isAdminManaging());
       allow delete: if isSignedIn() && isAdmin();
 
       /**
