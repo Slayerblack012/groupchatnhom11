@@ -8,6 +8,8 @@ import {
   orderBy,
   onSnapshot,
   doc,
+  getDocs,
+  where,
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
@@ -103,17 +105,22 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
   
     useEffect(() => {
     const fetchMemberData = async () => {
-        if (!group) return;
-        const memberIds = group.members;
+      if (!group || group.members.length === 0) return;
+      
+      try {
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('uid', 'in', group.members));
+        const querySnapshot = await getDocs(q);
         const memberData: Record<string, UserProfile> = {};
-        for(const id of memberIds){
-            const userSnap = await getDoc(doc(db, 'users', id));
-            if(userSnap.exists()){
-                memberData[id] = userSnap.data() as UserProfile;
-            }
-        }
+        querySnapshot.forEach((doc) => {
+            const userData = doc.data() as UserProfile;
+            memberData[userData.uid] = userData;
+        });
         setMembers(memberData);
-    }
+      } catch (error) {
+        console.error("Error fetching member data:", error);
+      }
+    };
     fetchMemberData();
   }, [group]);
 
@@ -149,7 +156,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
                 </div>
             ) : (
                 messages.map((message) => (
-                    <Message key={message.id} message={message} currentUserId={user.uid} allMembers={members}/>
+                    <Message key={message.id} message={message} currentUserId={user.uid} senderProfile={members[message.senderId]}/>
                 ))
             )}
         </div>

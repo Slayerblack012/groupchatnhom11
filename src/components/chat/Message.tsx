@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 interface MessageProps {
   message: MessageType;
   currentUserId: string;
-  allMembers: Record<string, UserProfile>;
+  senderProfile?: UserProfile;
 }
 
 const renderContent = (message: MessageType, t: (key: string) => string) => {
@@ -69,9 +69,11 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
     }
 };
 
-export default function Message({ message, currentUserId, allMembers }: MessageProps) {
+export default function Message({ message, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
   const isCurrentUser = message.senderId === currentUserId;
+  const senderName = senderProfile?.displayName || message.senderName;
+  const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
 
   return (
     <div
@@ -81,9 +83,9 @@ export default function Message({ message, currentUserId, allMembers }: MessageP
       )}
     >
       <Avatar className="h-8 w-8">
-        <AvatarImage src={message.senderPhotoURL} alt={message.senderName} />
+        <AvatarImage src={senderPhotoURL || undefined} alt={senderName || undefined} />
         <AvatarFallback>
-          {message.senderName?.charAt(0).toUpperCase() || "U"}
+          {senderName?.charAt(0).toUpperCase() || "U"}
         </AvatarFallback>
       </Avatar>
       <div
@@ -106,7 +108,7 @@ export default function Message({ message, currentUserId, allMembers }: MessageP
         </Card>
         <div className="text-xs text-muted-foreground">
           <span className="font-medium">
-            {isCurrentUser ? t('message.you') : message.senderName}
+            {isCurrentUser ? t('message.you') : senderName}
           </span>
           {" · "}
           {message.createdAt
