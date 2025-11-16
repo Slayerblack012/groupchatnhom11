@@ -86,9 +86,8 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
 
 export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
-  const { user } = useAuth();
   const isCurrentUser = message.senderId === currentUserId;
-  const isAdmin = user?.uid === group.admin;
+  const isAdmin = currentUserId === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
   const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
   const [isEditing, setIsEditing] = useState(false);
@@ -137,7 +136,13 @@ export default function Message({ message, group, currentUserId, senderProfile }
   const handlePinMessage = async () => {
     const groupRef = doc(db, "groups", group.id);
     const updateData = {
-      pinnedMessage: message,
+      pinnedMessage: {
+        id: message.id,
+        text: message.text,
+        contentType: message.contentType,
+        senderId: message.senderId,
+        senderName: senderName,
+      },
     };
     updateDoc(groupRef, updateData)
       .catch(error => {
