@@ -172,7 +172,7 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
       })
       .catch(error => {
         const permissionError = new FirestorePermissionError({
-            path: `groups/${group.id}`,
+            path: groupRef.path,
             operation: 'update',
             requestResourceData: updateData,
         });
@@ -358,5 +358,3 @@ export default function MemberManagementSheet({ group: initialGroup }: MemberMan
     </Sheet>
   );
 }
-
-    
