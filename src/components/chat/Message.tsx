@@ -87,7 +87,6 @@ const renderContent = (message: MessageType, t: (key: string) => string) => {
 export default function Message({ message, group, currentUserId, senderProfile }: MessageProps) {
   const { t } = useLanguage();
   const isCurrentUser = message.senderId === currentUserId;
-  const isAdmin = currentUserId === group.admin;
   const senderName = senderProfile?.displayName || message.senderName;
   const senderPhotoURL = senderProfile?.photoURL || message.senderPhotoURL;
   const [isEditing, setIsEditing] = useState(false);
@@ -211,15 +210,13 @@ export default function Message({ message, group, currentUserId, senderProfile }
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        {isAdmin && (
-                            <DropdownMenuItem onClick={handlePinMessage}>
-                                <Pin className="mr-2 h-4 w-4" />
-                                <span>{t('message.pin')}</span>
-                            </DropdownMenuItem>
-                        )}
+                        <DropdownMenuItem onClick={handlePinMessage}>
+                            <Pin className="mr-2 h-4 w-4" />
+                            <span>{t('message.pin')}</span>
+                        </DropdownMenuItem>
                         {canInteract && (
                           <>
-                            {isAdmin && <DropdownMenuSeparator />}
+                            <DropdownMenuSeparator />
                             {message.contentType === 'text' && (
                                 <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                     <Pencil className="mr-2 h-4 w-4" />

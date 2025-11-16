@@ -90,12 +90,10 @@ export default function ChatHeader({ group, onGroupLeft }: ChatHeaderProps) {
                 {group.pinnedMessage.senderName}: {group.pinnedMessage.contentType === 'text' ? group.pinnedMessage.text : `Sent a ${group.pinnedMessage.contentType}`}
             </p>
           </div>
-          {isAdmin && (
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleUnpinMessage}>
                 <X className="h-4 w-4" />
                 <span className="sr-only">{t('chatHeader.unpin')}</span>
             </Button>
-          )}
         </div>
       )}
     </>
