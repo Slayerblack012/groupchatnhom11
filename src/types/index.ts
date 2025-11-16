@@ -28,4 +28,5 @@ export interface Message {
   senderName: string | null;
   senderPhotoURL: string | null;
   createdAt: Timestamp;
+  editedAt?: Timestamp;
 }

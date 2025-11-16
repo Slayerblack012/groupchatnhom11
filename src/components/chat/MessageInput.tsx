@@ -107,8 +107,13 @@ export default function MessageInput({ groupId }: { groupId: string }) {
     if (!text.trim()) return;
 
     removeTypingStatus();
+    
+    // Custom ID including groupID for easier reference in edits.
+    const messageId = `${groupId}_${Date.now()}`;
+    const messagesCollection = doc(db, "groups", groupId, "messages", messageId);
 
-    const messageData: Omit<Message, 'id' | 'createdAt'> = {
+    const messageData: Omit<Message, 'createdAt'> = {
+      id: messageId,
       text,
       contentType: 'text',
       senderId: user.uid,
@@ -116,8 +121,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
       senderPhotoURL: user.photoURL,
     };
 
-    const messagesCollection = collection(db, "groups", groupId, "messages");
-    addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
+    setDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
       const permissionError = new FirestorePermissionError({
         path: `groups/${groupId}/messages`,
         operation: 'create',
@@ -159,13 +163,16 @@ export default function MessageInput({ groupId }: { groupId: string }) {
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          const messagesCollection = collection(db, "groups", groupId, "messages");
+          
+          const messageId = `${groupId}_${Date.now()}`;
+          const messagesCollection = doc(db, "groups", groupId, "messages", messageId);
           
           let contentType: Message['contentType'] = 'file';
           if (isImage) contentType = 'image';
           if (isVideo) contentType = 'video';
 
-          const messageData: Omit<Message, 'id' | 'createdAt'> = {
+          const messageData: Omit<Message, 'createdAt'> = {
+            id: messageId,
             fileUrl: downloadURL,
             fileName: file.name,
             contentType: contentType,
@@ -174,7 +181,7 @@ export default function MessageInput({ groupId }: { groupId: string }) {
             senderPhotoURL: user.photoURL,
           };
           
-          addDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
+          setDoc(messagesCollection, { ...messageData, createdAt: serverTimestamp() }).catch((error) => {
             const permissionError = new FirestorePermissionError({
                 path: `groups/${groupId}/messages`,
                 operation: 'create',

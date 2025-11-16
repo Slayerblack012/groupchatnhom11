@@ -74,7 +74,9 @@
   "message": {
     "you": "你",
     "sending": "发送中...",
-    "downloadFile": "下载文件"
+    "downloadFile": "下载文件",
+    "edit": "编辑消息",
+    "edited": "已编辑"
   },
   "welcome": {
     "title": "欢迎来到groupchat",

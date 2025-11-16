@@ -95,10 +95,14 @@ service cloud.firestore {
         function isGroupMember(groupId) {
           return get(/databases/$(database)/documents/groups/$(groupId)).data.members.hasAny([request.auth.uid]);
         }
+        
+        function isSender() {
+          return request.auth.uid == resource.data.senderId;
+        }
 
         allow read: if isGroupMember(groupId);
         allow create: if isSignedIn() && isGroupMember(groupId) && request.resource.data.senderId == request.auth.uid;
-        allow update: if false;
+        allow update: if isGroupMember(groupId) && isSender() && request.resource.data.text != resource.data.text;
         allow delete: if false;
       }
 

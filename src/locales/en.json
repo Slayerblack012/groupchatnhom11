@@ -74,7 +74,9 @@
   "message": {
     "you": "You",
     "sending": "sending...",
-    "downloadFile": "Download File"
+    "downloadFile": "Download File",
+    "edit": "Edit Message",
+    "edited": "edited"
   },
   "welcome": {
     "title": "Welcome to groupchat",
