@@ -9,9 +9,10 @@ import {
   onSnapshot,
   doc,
   Timestamp,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import type { Message as MessageType, Group } from "@/types";
+import type { Message as MessageType, Group, UserProfile } from "@/types";
 import { useAuth } from "@/providers/auth-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,6 +30,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
   const { user } = useAuth();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [group, setGroup] = useState<Group | null>(null);
+  const [members, setMembers] = useState<Record<string, UserProfile>>({});
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -53,15 +55,39 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
       }
     });
 
-    const messagesCollection = collection(db, "groups", groupId, "messages");
-    const q = query(messagesCollection, orderBy("createdAt", "asc"));
+    const publicMessagesQuery = query(
+      collection(db, "groups", groupId, "messages"),
+      where("visibleTo", "==", null),
+      orderBy("createdAt", "asc")
+    );
+    
+    const privateMessagesQuery = query(
+      collection(db, "groups", groupId, "messages"),
+      where("visibleTo", "array-contains", user.uid),
+      orderBy("createdAt", "asc")
+    );
 
-    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
-      const newMessages = snapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as MessageType)
-      );
-      setMessages(newMessages);
-      setLoading(false);
+    const processMessages = (snapshot: any, messageStore: any) => {
+        const newMessages = snapshot.docs.map(
+          (doc: any) => ({ id: doc.id, ...doc.data() } as MessageType)
+        );
+        newMessages.forEach((msg: any) => messageStore[msg.id] = msg);
+        
+        const allMessages = Object.values(messageStore).sort(
+            (a: any, b: any) => a.createdAt.toMillis() - b.createdAt.toMillis()
+        );
+        setMessages(allMessages as MessageType[]);
+        setLoading(false);
+    }
+    
+    const combinedMessages: {[id: string]: MessageType} = {};
+
+    const unsubscribePublic = onSnapshot(publicMessagesQuery, (snapshot) => {
+        processMessages(snapshot, combinedMessages);
+    });
+
+    const unsubscribePrivate = onSnapshot(privateMessagesQuery, (snapshot) => {
+        processMessages(snapshot, combinedMessages);
     });
 
     // Typing indicator listener
@@ -81,7 +107,8 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
 
     return () => {
         unsubscribeGroup();
-        unsubscribeMessages();
+        unsubscribePublic();
+        unsubscribePrivate();
         unsubscribeTyping();
     }
   }, [groupId, user, onGroupLeft]);
@@ -96,6 +123,23 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
         }
     }
   }, [messages, loading]);
+  
+    useEffect(() => {
+    const fetchMemberData = async () => {
+        if (!group) return;
+        const memberIds = group.members;
+        const memberData: Record<string, UserProfile> = {};
+        for(const id of memberIds){
+            const userSnap = await getDoc(doc(db, 'users', id));
+            if(userSnap.exists()){
+                memberData[id] = userSnap.data() as UserProfile;
+            }
+        }
+        setMembers(memberData);
+    }
+    fetchMemberData();
+  }, [group]);
+
 
   if (loading || !user || !group) {
     return (
@@ -128,7 +172,7 @@ export default function ChatView({ groupId, onGroupLeft }: { groupId: string, on
                 </div>
             ) : (
                 messages.map((message) => (
-                    <Message key={message.id} message={message} currentUserId={user.uid} />
+                    <Message key={message.id} message={message} currentUserId={user.uid} allMembers={members}/>
                 ))
             )}
         </div>
