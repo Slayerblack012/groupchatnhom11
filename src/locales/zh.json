@@ -53,7 +53,7 @@
   "memberManagement": {
     "title": "管理成员",
     "description": "从'{groupName}'中添加或删除成员。",
-    "addMember": "添加成员",
+    "addMember": "添加成员 (实验性)",
     "addMemberPlaceholder": "user@example.com",
     "currentMembers": "当前成员",
     "admin": "管理员",

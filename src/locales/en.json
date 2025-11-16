@@ -53,7 +53,7 @@
   "memberManagement": {
     "title": "Manage Members",
     "description": "Add or remove members from '{groupName}'.",
-    "addMember": "Add Member",
+    "addMember": "Add Member (Experimental)",
     "addMemberPlaceholder": "user@example.com",
     "currentMembers": "Current Members",
     "admin": "Admin",

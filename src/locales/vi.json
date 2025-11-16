@@ -53,7 +53,7 @@
   "memberManagement": {
     "title": "Quản lý thành viên",
     "description": "Thêm hoặc xóa thành viên khỏi '{groupName}'.",
-    "addMember": "Thêm thành viên",
+    "addMember": "Thêm thành viên (Thử nghiệm)",
     "addMemberPlaceholder": "user@example.com",
     "currentMembers": "Thành viên hiện tại",
     "admin": "Quản trị viên",
